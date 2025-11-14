@@ -1,26 +1,112 @@
+/* ===========================
+   GLOBAL STYLES FOR HERBALKHANA
+=========================== */
+
+/* Import Tailwind (v4+ syntax) */
 @import "tailwindcss";
 
+/* ===========================
+   CSS VARIABLES
+=========================== */
 :root {
+  --font-size: 16px;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --border: rgba(0, 0, 0, 0.1);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Dark mode variables */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --border: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ===========================
+   Base Styles
+=========================== */
+body {
+  @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans;
+  font-size: var(--font-size);
+  scroll-behavior: smooth;
+}
+
+/* ===========================
+   Typography
+=========================== */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500;
+}
+p,
+input,
+button,
+label {
+  font-weight: 400;
+}
+
+/* ===========================
+   Custom Utilities
+=========================== */
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .backdrop-blur-custom {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .text-shadow-gold {
+    text-shadow: 0 2px 10px rgba(221, 162, 0, 0.3);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(221, 162, 0, 0.4);
   }
 }
+.hover-underline {
+  position: relative;
+}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.hover-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+}
+
+.hover-underline:hover::after {
+  width: 100%;
 }
