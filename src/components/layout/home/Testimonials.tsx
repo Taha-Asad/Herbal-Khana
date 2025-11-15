@@ -4,11 +4,7 @@ import { Star } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
-type Props = {
-  rating: number;
-};
-
-function Testimonials({ rating }: Props) {
+function Testimonials() {
   return (
     <div className="relative my-10 py-20 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
@@ -34,7 +30,7 @@ function Testimonials({ rating }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
           {testimonials.map((items) => {
-            rating = items.rating;
+            const rating = items.rating;
             const stars = getStars(rating);
 
             return (
