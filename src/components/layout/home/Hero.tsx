@@ -36,7 +36,7 @@ const Hero = () => {
       <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[length:40px_40px]" />
 
       {/* Content */}
-      <div className="relative z-10 grid grid-cols-2 h-full px-5 py-5 gap-4">
+      <div className="relative z-10 grid md:grid-cols-2 xs:grid-cols-1  h-full px-5 py-5 gap-4">
         {/* Left Content */}
         <div className="flex flex-col justify-center items-start px-8 py-10">
           <span className="text-xl text-white">Serve the Power of Herbs</span>
@@ -65,7 +65,7 @@ const Hero = () => {
         <div className="relative py-5 px-2">
           {/* Right Content - Slider */}
           <div
-            className="overflow-hidden w-150 h-full border border-[#FEFCDF] border-8 rounded-2xl"
+            className="overflow-hidden w-150 h-full border-[#FEFCDF] border-8 rounded-2xl"
             ref={emblaRef}
           >
             <div className="flex">

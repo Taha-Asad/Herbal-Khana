@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "YourBrand — Shop the Future",
+    default: "Herbal Khana — Pure Organic",
     template: "%s | YourBrand",
   },
   description:

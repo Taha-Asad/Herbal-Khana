@@ -28,7 +28,7 @@ const DesktopNavbar = () => {
         <ShoppingBag />
       </Link>
 
-      <button className="btn flex items-center gap-2 bg-[#DDA200] hover:bg-[#B77900] px-5 py-2.5 text-[#FEFCDF] rounded-[10px] shadow-md hover:shadow-xl transition-all duration-300 hover:shadow-[0_4px_25px_rgba(221,162,0,0.6)]">
+      <button className="btn flex items-center gap-2 bg-[#DDA200] hover:bg-[#B77900] px-5 py-2.5 text-[#FEFCDF] rounded-[10px] shadow-md hover:shadow-xl transition-all duration-300">
         <User />
         Sign up
       </button>
