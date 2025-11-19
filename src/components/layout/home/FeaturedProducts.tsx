@@ -48,7 +48,7 @@ function FeaturedProducts() {
         {/* View all button */}
         <div className="flex justify-center my-10">
           <Link
-            href="/home/products"
+            href="/home/shop/products"
             className="
               flex items-center gap-2
               py-3 px-10 text-lg font-semibold

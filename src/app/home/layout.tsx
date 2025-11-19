@@ -1,3 +1,4 @@
+import Footer from "@/components/layout/home/Footer";
 import Navbar from "@/components/layout/home/Navbar/Navbar";
 import { Metadata } from "next";
 
@@ -20,7 +21,10 @@ export default function LandingLayout({
       <header>
         <Navbar />
       </header>
-      <main>{children}</main>
+      <main className="min-h-[100vh]">{children}</main>
+      <footer>
+        <Footer />
+      </footer>
     </div>
   );
 }

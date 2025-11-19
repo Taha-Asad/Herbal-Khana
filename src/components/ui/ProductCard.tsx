@@ -56,7 +56,7 @@ function ProductCard({
             <span className="font-semibold text-black/80">{price}</span>
 
             <Link
-              href={`/home/products/${Id}/`}
+              href={`/home/shop/products/${Id}/`}
               className="
                 flex items-center gap-1
                 text-base sm:text-lg

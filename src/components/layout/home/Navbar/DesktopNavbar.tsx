@@ -1,4 +1,3 @@
-"use client";
 import { navlinks } from "@/lib/navlinks";
 import { ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
@@ -6,7 +5,7 @@ import React from "react";
 
 const DesktopNavbar = () => {
   return (
-    <div className="hidden md:flex item-center space-x-12">
+    <div className="hidden lg:flex item-center space-x-12">
       {/* TODO:
 <SearchInput/> 
 <ModeToggle/>
