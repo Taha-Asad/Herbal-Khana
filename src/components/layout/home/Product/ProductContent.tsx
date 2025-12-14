@@ -1,7 +1,6 @@
-import { PaginationInfo } from "@/app/home/shop/products/page";
 import PromotionalBanner from "@/components/ui/PromotionalBanner";
 import { mockProducts, sortOptions } from "@/lib/products";
-import { FilterState, Product } from "@/types/product";
+import { FilterState, PaginationInfo, Product } from "@/types/product";
 import {
   ChevronDown,
   ChevronRight,

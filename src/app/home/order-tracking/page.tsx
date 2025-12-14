@@ -35,7 +35,7 @@ import { mockOrderData } from "@/lib/OrderTracking";
 // =============================================================================
 // API SERVICE (Ready for Backend Integration)
 // =============================================================================
-export const OrderTrackingAPI = {
+const OrderTrackingAPI = {
   // Search order by ID and email/phone
   async searchOrder(
     params: TrackingSearchParams

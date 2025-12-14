@@ -50,3 +50,23 @@ export interface FilterState {
   offers: string[];
   sortBy: string;
 }
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+}
+
+export interface FilterState {
+  categories: string[];
+  subcategories: string[];
+  priceRange: [number, number];
+  skinTypes: string[];
+  concerns: string[];
+  ingredients: string[];
+  ratings: number[];
+  availability: string[];
+  offers: string[];
+  sortBy: string;
+}
