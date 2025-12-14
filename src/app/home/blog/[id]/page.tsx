@@ -8,7 +8,7 @@ import BlogDetailClient from "./BlogDetailClient";
 // TYPES
 // =============================================================================
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // =============================================================================
@@ -16,9 +16,7 @@ interface PageProps {
 // =============================================================================
 export async function generateMetadata({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+}: PageProps): Promise<Metadata> {
   const { id } = await params;
   const post = blogPosts.find((p) => p.Id === id);
 
