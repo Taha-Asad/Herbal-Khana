@@ -55,7 +55,7 @@ import {
   validPromoCodes,
 } from "@/lib/cart";
 
-export const CartAPI = {
+const CartAPI = {
   async getCart(): Promise<{ items: CartItem[]; savedItems: CartItem[] }> {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return { items: mockCartItems, savedItems: mockSavedItems };
