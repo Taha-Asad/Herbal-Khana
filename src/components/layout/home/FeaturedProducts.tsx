@@ -1,5 +1,5 @@
 import ProductCard from "@/components/ui/ProductCard";
-import allProducts from "@/lib/products";
+import { mockProducts } from "@/lib/products";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import React from "react";
@@ -32,17 +32,19 @@ function FeaturedProducts() {
 
         {/* Products grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-10">
-          {allProducts.map((item) => (
-            <ProductCard
-              key={item.Id}
-              Id={item.Id}
-              imageSrc={item.image}
-              subtitle={item.category}
-              title={item.name}
-              content={item.description}
-              price={item.price}
-            />
-          ))}
+          {mockProducts
+            .filter((item) => item.isFeatured === true)
+            .map((item) => (
+              <ProductCard
+                key={item.id}
+                Id={item.id}
+                imageSrc={item.images}
+                subtitle={item.category}
+                title={item.name}
+                content={item.description}
+                price={item.price}
+              />
+            ))}
         </div>
 
         {/* View all button */}

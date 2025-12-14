@@ -20,7 +20,7 @@ async function Hero() {
       <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[length:40px_40px]" />
 
       {/* Content */}
-      <div className="relative z-10 grid md:grid-cols-2 grid-cols-1 h-full px-5 py-5 gap-8">
+      <div className="relative z-10 grid lg:grid-cols-2 grid-cols-1 h-full px-5 py-5 gap-8">
         {/* Left Content */}
         <div className="flex flex-col justify-center items-start px-8 py-10">
           <span className="text-xl text-white">Serve the Power of Herbs</span>
@@ -36,16 +36,16 @@ async function Hero() {
             ingredients, trusted by thousands across Pakistan.
           </p>
 
-          <div className="flex space-x-3 mt-5">
+          <div className="flex flex-col space-x-3 mt-5 space-y-0 sm:flex-row gap-4">
             <div className="border-2 border-transparent py-3 px-10 text-lg font-bold text-[#FEFCDF] bg-[#DDA200] rounded-[13px] group hover:bg-[#FEFCDF] hover:border-[#FEFCDF] duration-300 hover:text-[#DDA200]">
-              <Link href="/store" className="flex items-center">
+              <Link href="/home/shop/products" className="flex items-center">
                 Shop Now{" "}
                 <ArrowRight className="transition-transform duration-300 ease-in-out group-hover:translate-x-4" />
               </Link>
             </div>
 
             <div className="border-2 hover:border-transparent py-3 px-10 text-lg font-bold hover:text-[#FEFCDF] hover:bg-[#DDA200] rounded-[13px] group bg-[#FEFCDF] border-[#FEFCDF] duration-300 text-[#DDA200]">
-              <Link href="/about">Our Story</Link>
+              <Link href="/home/about">Our Story</Link>
             </div>
           </div>
         </div>

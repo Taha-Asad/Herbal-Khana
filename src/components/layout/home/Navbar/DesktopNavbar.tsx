@@ -20,17 +20,17 @@ const DesktopNavbar = () => {
         </Link>
       ))}
 
-      <Link
-        href={"/shoppingCart"}
-        className="hover:text-[#DDA200] duration-300"
-      >
+      <Link href={"/home/cart"} className="hover:text-[#DDA200] duration-300">
         <ShoppingBag />
       </Link>
 
-      <button className="btn flex items-center gap-2 bg-[#DDA200] hover:bg-[#B77900] px-5 py-2.5 text-[#FEFCDF] rounded-[10px] shadow-md hover:shadow-xl transition-all duration-300">
+      <Link
+        href="/auth/login"
+        className="btn flex items-center gap-2 bg-[#DDA200] hover:bg-[#B77900] px-5 py-2.5 text-[#FEFCDF] rounded-[10px] shadow-md hover:shadow-xl transition-all duration-300"
+      >
         <User />
         Sign up
-      </button>
+      </Link>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import React from "react";
 
 function Contact() {
   return (
-    <div className="overflow-hidden my-5 py-16 sm:py-20 bg-gradient-to-br from-white via-[#FFF8E1] to-white relative">
+    <div className="overflow-hidden py-16 sm:py-20 bg-gradient-to-br from-white via-[#FFF8E1] to-white relative">
       <div className="opacity-20 absolute inset-0">
         <div className="w-72 sm:w-96 h-72 sm:h-96 bg-[#DDA200]/20 rounded-full absolute top-1/4 left-0 blur-3xl" />
         <div className="w-72 sm:w-96 h-72 sm:h-96 bg-[#DDA200]/20 rounded-full absolute bottom-1/4 right-0 blur-3xl" />

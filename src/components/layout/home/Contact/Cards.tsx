@@ -44,7 +44,7 @@ Punjab, Pakistan`,
 ];
 function Cards() {
   return (
-    <div className="grid md:grid-cols-4 sm:grid-cols-2 xs:grid-cols-1 gap-4 mx-auto px-10 py-10 text-center">
+    <div className="grid lg:grid-cols-4 md:grid-cols-2 xs:grid-cols-1 gap-4 mx-auto px-10 py-10 text-center">
       {contactCard.map((items) => {
         const Icon = items.icon;
         return (

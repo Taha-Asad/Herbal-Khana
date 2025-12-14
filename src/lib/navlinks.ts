@@ -9,8 +9,12 @@ export const navlinks = [
 ];
 
 export const supportlinks = [
-  { icon: Store, title: "FAQS", link: "/faqs" },
-  { icon: Store, title: "Order Tracking", link: "/order-tracking" },
-  { icon: Store, title: "Shipping & Returns", link: "/shipping-and-returns" },
-  { icon: Store, title: "Refund Policy", link: "/refund" },
+  { icon: Store, title: "FAQS", link: "/home/faqs" },
+  { icon: Store, title: "Order Tracking", link: "/home/order-tracking" },
+  {
+    icon: Store,
+    title: "Shipping & Returns",
+    link: "/home/shipping-and-returns",
+  },
+  { icon: Store, title: "Refund Policy", link: "/home/refund-policy" },
 ];

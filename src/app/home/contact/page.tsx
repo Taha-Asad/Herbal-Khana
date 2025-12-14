@@ -5,7 +5,7 @@ import React from "react";
 
 async function page() {
   return (
-    <div className="my-15">
+    <div className="min-h-screen">
       <ContactHero />
       <Cards />
       <Contact />

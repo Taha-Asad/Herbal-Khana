@@ -3,12 +3,13 @@ import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import React from "react";
 interface BlogCardProps {
-  Id: number;
+  Id: string;
   imageSrc: string | StaticImageData;
   subtitle: string;
   title: string;
   content: string;
   author: string;
+  featured?: boolean;
   date: string;
 }
 function BlogsCard({
@@ -19,11 +20,17 @@ function BlogsCard({
   content,
   author,
   date,
+  featured,
 }: BlogCardProps) {
   return (
-    <div className="border border-transparent transform hover:-translate-y-4 duration-300 my-5 relative max-w-100 rounded-xl bg-white shadow-[0_6px_14px_0_rgba(221,162,0,0.6)] hover:shadow-[0_10px_24px_0_rgba(221,162,0,0.9)] transition-shadow">
+    <div className="border border-transparent transform hover:-translate-y-4 transition-all duration-300 my-5 relative max-w-100 rounded-xl bg-white shadow-[0_6px_14px_0_rgba(221,162,0,0.6)] hover:shadow-[0_10px_24px_0_rgba(221,162,0,0.9)]">
       <div className="w-full max-h-70 aspect-square overflow-hidden relative rounded-xl">
         <Image src={imageSrc} alt={title} fill style={{ objectFit: "cover" }} />
+        {featured && (
+          <div className="absolute top-3 right-3 bg-[#DDA200] text-white text-sm font-semibold py-1 px-3 rounded-full shadow-lg">
+            Featured
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col h-90 px-2 py-5">
@@ -49,7 +56,7 @@ function BlogsCard({
             </div>
 
             <Link
-              href={`/home/products/${Id}/`}
+              href={`/home/blog/${Id}/`}
               className="flex items-center text-lg duration-300 hover:text-[#DDA200] hover:underline group font-[Inter]"
             >
               Read More{" "}

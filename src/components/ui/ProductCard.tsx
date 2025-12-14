@@ -1,15 +1,15 @@
 import { ArrowRight } from "lucide-react";
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
 interface ProductCardProps {
-  Id: number;
-  imageSrc: string | StaticImageData;
+  Id: string;
+  imageSrc: string[];
   subtitle: string;
   title: string;
   content: string;
-  price: string;
+  price: number;
 }
 function ProductCard({
   Id,
@@ -34,7 +34,12 @@ function ProductCard({
       "
     >
       <div className="w-full aspect-square overflow-hidden relative rounded-t-xl">
-        <Image src={imageSrc} alt={title} fill className="object-cover" />
+        <Image
+          src={imageSrc[0] ? imageSrc[0] : "/fallbackImage"}
+          alt={title}
+          fill
+          className="object-cover"
+        />
       </div>
 
       <div className="flex flex-col px-4 py-5">
@@ -53,7 +58,7 @@ function ProductCard({
           <hr className="my-3 border-black/20" />
 
           <div className="flex justify-between items-center mx-1 mb-1">
-            <span className="font-semibold text-black/80">{price}</span>
+            <span className="font-semibold text-black/80">PKR {price}</span>
 
             <Link
               href={`/home/shop/products/${Id}/`}

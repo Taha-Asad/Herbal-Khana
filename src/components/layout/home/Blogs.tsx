@@ -22,7 +22,7 @@ function Blogs() {
             remedies, and healthy living.
           </p>{" "}
         </div>
-        <div className="grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 place-items-center">
           {blogPosts.map((items) => {
             return (
               <BlogsCard
