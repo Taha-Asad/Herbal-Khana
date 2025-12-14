@@ -1,4 +1,4 @@
-import { PaginationInfo } from "@/app/home/shop/products/page";
+import { PaginationInfo } from "@/types/product";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationProps {
