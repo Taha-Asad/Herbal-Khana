@@ -12,3 +12,183 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum ROLE {
+  USER
+  ADMIN
+}
+
+enum ORDER_STATUS {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PAYMENT_STATUS {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id    String  @id @default(cuid())
+  email String  @unique
+  phone String? @unique
+  name  String?
+  image String?
+
+  password      String?
+  role          ROLE      @default(USER)
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+  lastLoginAt   DateTime?
+
+  isActive  Boolean   @default(true)
+  isBanned  Boolean   @default(false)
+  banReason String?
+  deletedAt DateTime?
+
+  orders        Order[]
+  reviews       Rating[]
+  comments      Comment[]
+  bookmarks     BookMarkedProduct[]
+  addresses     Address[]
+  sessions      Session[]
+  oauthAccounts OAuthAccount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([phone])
+}
+
+model OAuthAccount {
+  id                String @id @default(cuid())
+  provider          String
+  providerAccountId String
+  userId            String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  label     String?
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String?
+  postal    String
+  country   String
+  isDefault Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal
+  stock       Int
+  isActive    Boolean @default(true)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  reviews    Rating[]
+  comments   Comment[]
+  bookmarks  BookMarkedProduct[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Order {
+  id       String       @id @default(cuid())
+  userId   String
+  status   ORDER_STATUS @default(PENDING)
+  total    Decimal
+  currency String       @default("PKR")
+
+  paymentStatus PAYMENT_STATUS @default(PENDING)
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Rating {
+  id        String @id @default(cuid())
+  value     Int
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Comment {
+  id        String @id @default(cuid())
+  content   String
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model BookMarkedProduct {
+  id        String @id @default(cuid())
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
