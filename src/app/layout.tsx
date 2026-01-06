@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Inter, Noto_Nastaliq_Urdu } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "react-hot-toast";
 
 export const metadata = {
   title: "Herbal Khana",
@@ -26,7 +27,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.className} ${notoUrdu.className}`}>
       <body suppressHydrationWarning>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <Toaster />
+        </SessionProvider>
       </body>
     </html>
   );

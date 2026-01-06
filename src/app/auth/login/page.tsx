@@ -1,4 +1,3 @@
-// app/auth/signin/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -19,6 +18,8 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import logo from "../../../../public/sample-logo2.jpeg";
+import { loginUser } from "@/app/action/user.action";
+import toast from "react-hot-toast";
 export default function SignInPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -59,13 +60,21 @@ export default function SignInPage() {
     setIsLoading(true);
 
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const res = await loginUser(
+      formData.email,
+      formData.password,
+      formData.rememberMe
+    );
+    if (!res?.success) {
+      setIsLoading(false);
+      toast.error(res?.message || "Invalid credentials");
+      return;
+    }
 
+    toast.success("Logged in successfully");
     console.log("Sign in:", formData);
     setIsLoading(false);
-
-    // Redirect after successful login
-    router.push("/");
+    router.push("/home");
   };
 
   return (

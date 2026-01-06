@@ -1,4 +1,3 @@
-// auth.ts (uses Prisma - NOT for middleware)
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
@@ -9,38 +8,26 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Missing Credentials");
+          throw new Error("Missing credentials");
         }
 
         const user = await prisma.user.findUnique({
           where: { email: String(credentials.email) },
-          select: {
-            id: true,
-            email: true,
-            password: true,
-            role: true,
-            name: true,
-          },
         });
 
         if (!user || !user.password) {
-          throw new Error("User not found");
+          throw new Error("Invalid credentials");
         }
 
         const match = await bcrypt.compare(
-          String(credentials.password),
-          String(user.password)
+          credentials.password as string,
+          user.password
         );
 
         if (!match) {
-          throw new Error("Wrong password");
+          throw new Error("Invalid credentials");
         }
 
         return {

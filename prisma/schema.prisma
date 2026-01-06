@@ -36,33 +36,33 @@ enum PAYMENT_STATUS {
 }
 
 model User {
-  id    String  @id @default(cuid())
-  email String  @unique
-  phone String? @unique
-  name  String?
-  image String?
-
-  password      String?
-  role          ROLE      @default(USER)
-  emailVerified Boolean   @default(false)
-  phoneVerified Boolean   @default(false)
-  lastLoginAt   DateTime?
-
-  isActive  Boolean   @default(true)
-  isBanned  Boolean   @default(false)
-  banReason String?
-  deletedAt DateTime?
-
-  orders        Order[]
-  reviews       Rating[]
-  comments      Comment[]
-  bookmarks     BookMarkedProduct[]
-  addresses     Address[]
-  sessions      Session[]
-  oauthAccounts OAuthAccount[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  phone              String?             @unique
+  name               String?
+  image              String?
+  password           String?
+  role               ROLE                @default(USER)
+  emailVerified      Boolean             @default(false)
+  emailVerifyToken   String?
+  emailVerifyExpires DateTime?
+  resetToken         String?             @unique
+  resetTokenExpiry   DateTime?
+  phoneVerified      Boolean             @default(false)
+  lastLoginAt        DateTime?
+  isActive           Boolean             @default(true)
+  isBanned           Boolean             @default(false)
+  banReason          String?
+  deletedAt          DateTime?
+  orders             Order[]
+  reviews            Rating[]
+  comments           Comment[]
+  bookmarks          BookMarkedProduct[]
+  addresses          Address[]
+  sessions           Session[]
+  oauthAccounts      OAuthAccount[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([email])
   @@index([phone])

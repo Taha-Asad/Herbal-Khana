@@ -4,7 +4,11 @@ import { auth, signIn, signOut } from "@/auth";
 import prisma from "@/lib/prisma";
 import { compare, hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
-
+import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
+import { sendMail } from "@/lib/mailer";
+import ejs from "ejs";
+import path from "path";
 export async function getAllUsers() {
   try {
     const users = await prisma.user.findMany({
@@ -35,156 +39,145 @@ export async function getAllUsers() {
 }
 
 export async function CreateUser(
-  name: string,
+  name: string | undefined,
   email: string,
-  phone: string,
-  password: string,
-  confirmPassword: string,
+  phone: string | undefined,
+  password: string | undefined,
+  confirmPassword: string | undefined,
   image?: string
 ) {
   try {
-    if (!name || !email || !phone || !password || !confirmPassword) {
-      return {
-        success: false,
-        message: "Please fill in all required fields.",
-      };
+    /* ------------------ VALIDATIONS ------------------ */
+
+    if (!email) {
+      return { success: false, message: "Email is required." };
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return {
-        success: false,
-        message: "Please enter a valid email address.",
-      };
+      return { success: false, message: "Invalid email address." };
     }
 
-    const pakistanPhoneRegex = /^\+923\d{9}$/;
-    if (!pakistanPhoneRegex.test(phone)) {
+    if (phone) {
+      const pakistanPhoneRegex = /^\+923\d{9}$/;
+      if (!pakistanPhoneRegex.test(phone)) {
+        return {
+          success: false,
+          message: "Enter a valid Pakistan number like +923001234567.",
+        };
+      }
+    }
+
+    if (!password || !confirmPassword) {
       return {
         success: false,
-        message: "Enter a valid Pakistan number like +923001234567.",
+        message: "Password and confirm password are required.",
       };
     }
 
     if (password !== confirmPassword) {
-      return {
-        success: false,
-        message: "Passwords do not match.",
-      };
+      return { success: false, message: "Passwords do not match." };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    /* ------------------ CHECK EXISTING USER ------------------ */
 
-    if (existing) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
       return {
         success: false,
         message: "User with this email already exists.",
       };
     }
 
+    if (phone) {
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone },
+      });
+      if (existingPhone) {
+        return {
+          success: false,
+          message: "User with this phone number already exists.",
+        };
+      }
+    }
+
+    /* ------------------ PASSWORD HASH ------------------ */
+
     const hashedPassword = await hash(password, 10);
+
+    /* ------------------ EMAIL VERIFICATION TOKEN ------------------ */
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    /* ------------------ CREATE USER ------------------ */
 
     const user = await prisma.user.create({
       data: {
-        name,
+        name: name || null,
         email,
-        phone,
+        phone: phone || null,
         password: hashedPassword,
         image: image || null,
         role: "USER",
+        emailVerified: false,
+        emailVerifyToken: hashedToken,
+        emailVerifyExpires: tokenExpiry,
+        isActive: true,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        image: true,
-        role: true,
-        createdAt: true,
-      },
+    });
+
+    /* ------------------ SEND EMAIL ------------------ */
+
+    const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${rawToken}`;
+
+    await sendVerificationEmail({
+      email: user.email,
+      name: user.name ?? "User",
+      verifyUrl,
     });
 
     return {
       success: true,
-      message: "User created successfully.",
-      user,
+      message: "Account created. Please verify your email.",
     };
   } catch (error) {
     console.error("Signup error:", error);
     return {
       success: false,
-      message: "Something went wrong while creating the user.",
+      message: "Something went wrong while creating the account.",
     };
   }
 }
 
-export async function loginUser(email: string, password: string) {
+export async function loginUser(
+  email: string,
+  password: string,
+  rememberMe: boolean
+) {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    if (email === adminEmail) {
-      if (password !== adminPassword) {
-        return {
-          success: false,
-          message: "Wrong admin password",
-        };
-      }
-
-      return {
-        success: true,
-        message: "Admin login successful",
-        isAdmin: true,
-      };
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        message: "User does not exist",
-      };
-    }
-
-    if (user.password === null) {
-      return;
-    }
-
-    const validPassword = await compare(password, user.password);
-    if (!validPassword) {
-      return {
-        success: false,
-        message: "Wrong password",
-      };
-    }
-
-    const res = await signIn("credentials", {
+    await signIn("credentials", {
       email,
       password,
+      rememberMe: rememberMe ? "true" : "false",
       redirect: false,
     });
 
-    if (res?.error) {
-      return {
-        success: false,
-        message: res.error,
-      };
-    }
-
-    const isAdmin = user.role === "ADMIN";
-
-    return {
-      success: true,
-      message: "Login successful",
-      isAdmin,
-    };
-  } catch (error) {
+    return { success: true };
+  } catch (error: Error | unknown) {
+    const message =
+      error instanceof Error ? error.message : "Invalid credentials";
     return {
       success: false,
-      message: `Login error: ${error}`,
+      message,
     };
   }
 }
@@ -457,5 +450,76 @@ export async function getAdmin() {
   } catch (error) {
     console.error("Error fetching profile:", error);
     return { success: false, error: "Failed to fetch profile" };
+  }
+}
+
+// 1. Action to request a reset link
+export async function forgotPassword(email: string) {
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user)
+      return {
+        success: false,
+        message: "If that email exists, a link has been sent.",
+      };
+
+    // Generate a secure random token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    await prisma.user.update({
+      where: { email },
+      data: { resetToken: token, resetTokenExpiry: expiry },
+    });
+
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${token}`;
+
+    // Send Email (You can create a new EJS template for this)
+    const templatePath = path.join(
+      process.cwd(),
+      "src",
+      "templates",
+      "reset-password.ejs"
+    );
+    const htmlContent = await ejs.renderFile(templatePath, {
+      name: user.name || "User",
+      resetLink: resetLink,
+    });
+
+    await sendMail(email, "Reset your Herbal Khana Password", htmlContent);
+
+    return { success: true, message: "Check your email for a reset link." };
+  } catch (error) {
+    console.log(error);
+    return { success: false, message: "Something went wrong." };
+  }
+}
+
+// 2. Action to verify token and set new password
+export async function resetPassword(token: string, newPassword: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { resetToken: token },
+    });
+
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      return { success: false, message: "Token is invalid or has expired." };
+    }
+
+    const hashedPassword = await hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    return { success: true, message: "Password updated successfully!" };
+  } catch (error) {
+    console.log(error);
+    return { success: false, message: "Failed to reset password." };
   }
 }

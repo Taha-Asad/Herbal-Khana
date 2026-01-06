@@ -1,9 +1,7 @@
-// app/auth/signup/page.tsx
 "use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -30,12 +28,12 @@ interface PasswordStrength {
 }
 
 import logo from "../../../../public/sample-logo2.jpeg";
+import { CreateUser } from "@/app/action/user.action";
+import toast from "react-hot-toast";
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     password: "",
@@ -90,11 +88,8 @@ export default function SignUpPage() {
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+    if (!formData.name.trim()) {
+      newErrors.name = "name is required";
     }
     if (!formData.email) {
       newErrors.email = "Email is required";
@@ -149,14 +144,21 @@ export default function SignUpPage() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const res = await CreateUser(
+      formData.name,
+      formData.email,
+      formData.phone,
+      formData.password,
+      formData.confirmPassword
+    );
+    if (!res?.success) {
+      setIsLoading(false);
+      toast.error(res?.message || "Error in Registering User");
+      return;
+    }
 
-    console.log("Sign up:", formData);
+    toast.success("Registered User successfully");
     setIsLoading(false);
-
-    // Redirect to verification or home page
-    router.push("/auth/verify-email");
   };
 
   return (
@@ -261,69 +263,37 @@ export default function SignUpPage() {
               {step === 1 ? (
                 <>
                   {/* Name Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="firstName"
-                        className="block text-sm font-semibold text-stone-700 mb-2"
-                      >
-                        First Name
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                        <input
-                          id="firstName"
-                          type="text"
-                          value={formData.firstName}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              firstName: e.target.value,
-                            })
-                          }
-                          placeholder="John"
-                          className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl text-stone-800 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#DDA200]/20
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-semibold text-stone-700 mb-2"
+                    >
+                      Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+                      <input
+                        id="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            name: e.target.value,
+                          })
+                        }
+                        placeholder="John"
+                        className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl text-stone-800 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#DDA200]/20
                             ${
-                              errors.firstName
+                              errors.name
                                 ? "border-red-300 focus:border-red-500"
                                 : "border-stone-200 focus:border-[#DDA200]"
                             }`}
-                        />
-                      </div>
-                      {errors.firstName && (
-                        <p className="mt-2 text-sm text-red-500">
-                          {errors.firstName}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="lastName"
-                        className="block text-sm font-semibold text-stone-700 mb-2"
-                      >
-                        Last Name
-                      </label>
-                      <input
-                        id="lastName"
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) =>
-                          setFormData({ ...formData, lastName: e.target.value })
-                        }
-                        placeholder="Doe"
-                        className={`w-full px-4 py-3.5 border-2 rounded-xl text-stone-800 placeholder:text-stone-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#DDA200]/20
-                          ${
-                            errors.lastName
-                              ? "border-red-300 focus:border-red-500"
-                              : "border-stone-200 focus:border-[#DDA200]"
-                          }`}
                       />
-                      {errors.lastName && (
-                        <p className="mt-2 text-sm text-red-500">
-                          {errors.lastName}
-                        </p>
-                      )}
                     </div>
+                    {errors.name && (
+                      <p className="mt-2 text-sm text-red-500">{errors.name}</p>
+                    )}
                   </div>
 
                   {/* Email */}
