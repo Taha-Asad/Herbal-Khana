@@ -115,3 +115,15 @@ label {
 .hover-underline:hover::after {
   width: 100%;
 }
+@keyframes scaleDown {
+  from {
+    transform: scale(1.25);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-scale-down {
+  animation: scaleDown 300ms ease-out forwards;
+}
