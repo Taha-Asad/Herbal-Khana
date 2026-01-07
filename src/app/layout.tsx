@@ -14,7 +14,7 @@ const inter = Inter({
   display: "swap",
 });
 const notoUrdu = Noto_Nastaliq_Urdu({
-  subsets: ["arabic"], // Urdu uses Arabic script subset
+  subsets: ["arabic"],
   weight: ["400"],
   display: "swap",
 });
@@ -23,7 +23,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Middleware handles redirects - just show/hide navbar
   return (
     <html lang="en" className={`${inter.className} ${notoUrdu.className}`}>
       <body suppressHydrationWarning>
