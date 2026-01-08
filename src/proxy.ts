@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-const protectedRoutes = ["/home/cart"];
+const protectedRoutes = ["/home/account/*"];
 
 export async function proxy(request: Request) {
   const { pathname } = new URL(request.url);

@@ -26,13 +26,13 @@ interface UserProfileDropdownProps {
 }
 
 const menuItems = [
-  { icon: User, label: "My Profile", href: "/account/profile" },
-  { icon: Package, label: "My Orders", href: "/account/orders" },
-  { icon: Heart, label: "Wishlist", href: "/account/wishlist" },
-  { icon: MapPin, label: "Addresses", href: "/account/addresses" },
-  { icon: CreditCard, label: "Payments", href: "/account/payments" },
-  { icon: Settings, label: "Settings", href: "/account/settings" },
-  { icon: HelpCircle, label: "Help", href: "/support" },
+  { icon: User, label: "My Profile", href: "/home/account/profile" },
+  { icon: Package, label: "My Orders", href: "/home/account/orders" },
+  { icon: Heart, label: "Wishlist", href: "/home/account/wishlist" },
+  { icon: MapPin, label: "Addresses", href: "/home/account/addresses" },
+  { icon: CreditCard, label: "Payments", href: "/home/account/payments" },
+  { icon: Settings, label: "Settings", href: "/home/account/settings" },
+  { icon: HelpCircle, label: "Help", href: "/home/account/support" },
 ];
 
 const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user }) => {

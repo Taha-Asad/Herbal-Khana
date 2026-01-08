@@ -8,10 +8,8 @@ import {
   Truck,
   Clock,
   MapPin,
-  AlertCircle,
   ArrowRight,
   ChevronRight,
-  RefreshCw,
   User,
   CreditCard,
   Shield,
@@ -59,14 +57,14 @@ const OrderTrackingAPI = {
   },
 
   // Get order by ID (for authenticated users)
-  async getOrderById(orderId: string): Promise<OrderDetails | null> {
+  async getOrderById(): Promise<OrderDetails | null> {
     // TODO: Replace with actual API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return mockOrderData;
   },
 
   // Refresh tracking status
-  async refreshTracking(orderId: string): Promise<TrackingEvent[]> {
+  async refreshTracking(): Promise<TrackingEvent[]> {
     // TODO: Replace with actual API call
     await new Promise((resolve) => setTimeout(resolve, 800));
     return mockOrderData.trackingHistory;
@@ -74,32 +72,32 @@ const OrderTrackingAPI = {
 };
 
 // Error State Component
-interface ErrorStateProps {
-  message: string;
-  onRetry: () => void;
-}
+// interface ErrorStateProps {
+//   message: string;
+//   onRetry: () => void;
+// }
 
-function ErrorState({ message, onRetry }: ErrorStateProps) {
-  return (
-    <div className="text-center py-16 px-4">
-      <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-        <AlertCircle className="w-10 h-10 text-red-500" />
-      </div>
-      <h3 className="text-2xl font-bold text-stone-800 mb-2">
-        Order Not Found
-      </h3>
-      <p className="text-stone-600 mb-8 max-w-md mx-auto">{message}</p>
-      <button
-        onClick={onRetry}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#DDA200] text-white 
-          font-semibold rounded-xl hover:bg-[#b38600] transition-colors duration-300"
-      >
-        <RefreshCw className="w-5 h-5" />
-        Try Again
-      </button>
-    </div>
-  );
-}
+// function ErrorState({ message, onRetry }: ErrorStateProps) {
+//   return (
+//     <div className="text-center py-16 px-4">
+//       <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+//         <AlertCircle className="w-10 h-10 text-red-500" />
+//       </div>
+//       <h3 className="text-2xl font-bold text-stone-800 mb-2">
+//         Order Not Found
+//       </h3>
+//       <p className="text-stone-600 mb-8 max-w-md mx-auto">{message}</p>
+//       <button
+//         onClick={onRetry}
+//         className="inline-flex items-center gap-2 px-6 py-3 bg-[#DDA200] text-white
+//           font-semibold rounded-xl hover:bg-[#b38600] transition-colors duration-300"
+//       >
+//         <RefreshCw className="w-5 h-5" />
+//         Try Again
+//       </button>
+//     </div>
+//   );
+// }
 
 // =============================================================================
 // MAIN PAGE COMPONENT
@@ -109,7 +107,7 @@ export default function OrderTrackingPage() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [orderData, setOrderData] = useState<OrderDetails | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [, setErrorMessage] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // avoid comparisons inside narrowed JSX branches by deriving a boolean here
@@ -142,9 +140,10 @@ export default function OrderTrackingPage() {
 
     setIsRefreshing(true);
     try {
-      const updatedHistory = await OrderTrackingAPI.refreshTracking(
-        orderData.orderId
-      );
+      const updatedHistory = await OrderTrackingAPI
+        .refreshTracking
+        // orderData.orderId
+        ();
       setOrderData((prev) =>
         prev ? { ...prev, trackingHistory: updatedHistory } : null
       );

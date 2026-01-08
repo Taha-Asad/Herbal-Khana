@@ -24,7 +24,7 @@ export interface WishlistItem {
 }
 
 type WishlistResult =
-  | { success: true; data: WishlistItem[] }
+  | { success: true; data: WishlistItem[]; message?: string }
   | { success: false; message: string };
 
 type ToggleResult =
@@ -122,7 +122,7 @@ export async function getWishlist(): Promise<WishlistResult> {
         };
       });
 
-    return { success: true, data: wishlistItems };
+    return { success: true, data: wishlistItems, message: "Wishlist loaded" };
   } catch (error) {
     console.error("getWishlist error:", error);
     return { success: false, message: "Failed to load wishlist" };
