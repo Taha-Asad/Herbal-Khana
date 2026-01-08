@@ -1,5 +1,5 @@
 import {
-  clearCartAction,
+  clearCart,
   getCartForUI,
   removeCartItem,
   toggleSaveForLater,
@@ -184,7 +184,7 @@ export function useCart() {
 
   const handleClearCart = useCallback(async () => {
     try {
-      const result = await clearCartAction();
+      const result = await clearCart();
 
       if (result.success && "data" in result) {
         // TypeScript now knows result has `data`

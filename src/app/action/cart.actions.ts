@@ -4,17 +4,13 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import {
+import type {
   CartItem,
   CartResult,
   CartSummary,
   PROMO_TYPE,
   PromoCodeData,
 } from "@/types/cart";
-
-// =============================================================================
-// TYPES
-// =============================================================================
 
 // =============================================================================
 // CONSTANTS
@@ -56,8 +52,19 @@ async function getOrCreateSessionId(): Promise<string> {
 async function getCurrentUserId(): Promise<string | null> {
   try {
     const session = await auth();
-    return session?.user?.id || null;
-  } catch {
+    const userId = session?.user?.id;
+
+    if (!userId) return null;
+
+    // Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    return user?.id || null;
+  } catch (error) {
+    console.error("getCurrentUserId error:", error);
     return null;
   }
 }
@@ -67,69 +74,79 @@ async function getOrCreateCart(): Promise<string> {
     const userId = await getCurrentUserId();
     const sessionId = await getOrCreateSessionId();
 
-    // 1. Prefer user cart if logged in
+    // 1. If user is logged in, look for their cart first
     if (userId) {
+      // Check if user has an active cart
       const userCart = await prisma.cart.findFirst({
         where: { userId, status: "ACTIVE" },
         orderBy: { updatedAt: "desc" },
       });
 
       if (userCart) {
+        // User has a cart, check if there's also a session cart to merge
+        const sessionCart = await prisma.cart.findFirst({
+          where: {
+            sessionId,
+            status: "ACTIVE",
+            userId: null, // Only get unassigned session carts
+          },
+          include: { items: true },
+          orderBy: { updatedAt: "desc" },
+        });
+
+        // If session cart has items, merge them into user cart
+        if (sessionCart && sessionCart.items.length > 0) {
+          await mergeSessionCartIntoUserCart(sessionCart.id, userCart.id);
+        }
+
         return userCart.id;
       }
 
+      // User doesn't have a cart, check for session cart to claim
       const sessionCart = await prisma.cart.findFirst({
-        where: { sessionId, status: "ACTIVE", userId: null },
+        where: { sessionId, status: "ACTIVE" },
         orderBy: { updatedAt: "desc" },
       });
 
       if (sessionCart) {
+        // Claim the session cart for the user
         await prisma.cart.update({
           where: { id: sessionCart.id },
           data: { userId, expiresAt: null },
         });
         return sessionCart.id;
       }
+
+      // Create new cart for user
+      const newUserCart = await prisma.cart.create({
+        data: {
+          userId,
+          sessionId,
+          status: "ACTIVE",
+          expiresAt: null,
+        },
+      });
+
+      return newUserCart.id;
     }
 
-    // 2. Fallback to session cart
+    // 2. User is not logged in, use session cart
     const sessionCart = await prisma.cart.findFirst({
       where: { sessionId, status: "ACTIVE" },
       orderBy: { updatedAt: "desc" },
     });
 
     if (sessionCart) {
-      if (userId && !sessionCart.userId) {
-        await prisma.cart.update({
-          where: { id: sessionCart.id },
-          data: { userId, expiresAt: null },
-        });
-      }
       return sessionCart.id;
     }
 
-    // 3. Create new cart (safe user check)
-    let validUserId: string | null = null;
-
-    if (userId) {
-      const userExists = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true },
-      });
-
-      if (userExists) {
-        validUserId = userId;
-      }
-    }
-
+    // 3. Create new session cart (no user)
     const newCart = await prisma.cart.create({
       data: {
-        userId: validUserId,
+        userId: null, // Explicitly null, no user
         sessionId,
         status: "ACTIVE",
-        expiresAt: validUserId
-          ? null
-          : new Date(Date.now() + SESSION_EXPIRY_DAYS * 86400000),
+        expiresAt: new Date(Date.now() + SESSION_EXPIRY_DAYS * 86400000),
       },
     });
 
@@ -137,6 +154,56 @@ async function getOrCreateCart(): Promise<string> {
   } catch (error) {
     console.error("getOrCreateCart error:", error);
     throw new Error("Failed to get or create cart");
+  }
+}
+
+async function mergeSessionCartIntoUserCart(
+  sessionCartId: string,
+  userCartId: string
+): Promise<void> {
+  try {
+    const sessionItems = await prisma.cartItem.findMany({
+      where: { cartId: sessionCartId },
+    });
+
+    for (const item of sessionItems) {
+      // Check if item already exists in user cart
+      const existingItem = await prisma.cartItem.findUnique({
+        where: {
+          cartId_variantId_isSavedForLater: {
+            cartId: userCartId,
+            variantId: item.variantId,
+            isSavedForLater: item.isSavedForLater,
+          },
+        },
+      });
+
+      if (existingItem) {
+        // Merge quantities
+        await prisma.cartItem.update({
+          where: { id: existingItem.id },
+          data: { quantity: existingItem.quantity + item.quantity },
+        });
+      } else {
+        // Move item to user cart
+        await prisma.cartItem.update({
+          where: { id: item.id },
+          data: { cartId: userCartId },
+        });
+      }
+    }
+
+    // Delete the empty session cart
+    await prisma.cartItem.deleteMany({
+      where: { cartId: sessionCartId },
+    });
+
+    await prisma.cart.delete({
+      where: { id: sessionCartId },
+    });
+  } catch (error) {
+    console.error("mergeSessionCartIntoUserCart error:", error);
+    // Don't throw, just log - merge is nice-to-have, not critical
   }
 }
 
@@ -225,33 +292,37 @@ function mapCartItems(
       sku: string;
       product: {
         name: string;
+        slug: string;
         costPrice: unknown;
         images: Array<{ url: string; isPrimary: boolean }>;
       };
     };
   }>
 ): CartItem[] {
-  return items.map((item) => ({
-    id: item.id,
-    variantId: item.variant.id,
-    quantity: item.quantity,
-    price: Number(item.variant.price),
-    // Use costPrice as originalPrice if it exists and is higher than price
-    originalPrice: item.variant.product.costPrice
-      ? Number(item.variant.product.costPrice) > Number(item.variant.price)
-        ? Number(item.variant.product.costPrice)
-        : undefined
-      : undefined,
-    name: item.variant.product.name,
-    variantName: item.variant.name,
-    size: item.variant.size,
-    scent: item.variant.scent,
-    image:
-      item.variant.product.images.find((i) => i.isPrimary)?.url ??
-      item.variant.product.images[0]?.url,
-    stock: item.variant.stock,
-    sku: item.variant.sku,
-  }));
+  return items.map((item) => {
+    const primaryImage = item.variant.product.images.find((i) => i.isPrimary);
+    const firstImage = item.variant.product.images[0];
+
+    return {
+      id: item.id,
+      variantId: item.variant.id,
+      quantity: item.quantity,
+      price: Number(item.variant.price),
+      originalPrice: item.variant.product.costPrice
+        ? Number(item.variant.product.costPrice) > Number(item.variant.price)
+          ? Number(item.variant.product.costPrice)
+          : undefined
+        : undefined,
+      name: item.variant.product.name,
+      slug: item.variant.product.slug,
+      variantName: item.variant.name,
+      size: item.variant.size,
+      scent: item.variant.scent,
+      image: primaryImage?.url || firstImage?.url || "/images/placeholder.png",
+      stock: item.variant.stock,
+      sku: item.variant.sku,
+    };
+  });
 }
 
 // =============================================================================
@@ -666,7 +737,22 @@ export async function getCartItemCount(): Promise<number> {
     return 0;
   }
 }
-// Add to actions/cart.ts
+
+// =============================================================================
+// RECOMMENDATIONS
+// =============================================================================
+
+interface RecommendedProduct {
+  id: string;
+  name: string;
+  slug: string;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviewCount: number;
+  variantId: string;
+}
 
 export async function getRecommendedProducts(): Promise<{
   success: boolean;
@@ -674,23 +760,28 @@ export async function getRecommendedProducts(): Promise<{
   message?: string;
 }> {
   try {
-    // Get featured products or products from similar categories
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
         isFeatured: true,
+        productVariants: {
+          some: { stock: { gt: 0 } },
+        },
       },
       take: 8,
+      orderBy: { salesCount: "desc" },
       include: {
         images: {
           where: { isPrimary: true },
           take: 1,
         },
         productVariants: {
+          where: { stock: { gt: 0 } },
           take: 1,
           orderBy: { price: "asc" },
         },
         reviews: {
+          where: { isApproved: true },
           select: { rating: true },
         },
       },
@@ -706,17 +797,18 @@ export async function getRecommendedProducts(): Promise<{
               product.reviews.length
             : 0;
 
+        const costPrice = product.costPrice ? Number(product.costPrice) : null;
+        const variantPrice = Number(variant.price);
+
         return {
           id: product.id,
           name: product.name,
-          image: product.images[0]?.url || "/placeholder-product.jpg",
-          price: Number(variant.price),
-          originalPrice: product.costPrice
-            ? Number(product.costPrice) > Number(variant.price)
-              ? Number(product.costPrice)
-              : undefined
-            : undefined,
-          rating: avgRating,
+          slug: product.slug,
+          image: product.images[0]?.url || "/images/placeholder.png",
+          price: variantPrice,
+          originalPrice:
+            costPrice && costPrice > variantPrice ? costPrice : undefined,
+          rating: Math.round(avgRating * 10) / 10,
           reviewCount: product.reviews.length,
           variantId: variant.id,
         };
@@ -726,39 +818,5 @@ export async function getRecommendedProducts(): Promise<{
   } catch (error) {
     console.error("getRecommendedProducts error:", error);
     return { success: false, message: "Failed to load recommendations" };
-  }
-}
-
-interface RecommendedProduct {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  variantId: string;
-}
-
-export async function clearCartAction() {
-  try {
-    const cartId = await getOrCreateCart();
-
-    // Delete all items that are not saved for later
-    await prisma.cartItem.deleteMany({
-      where: {
-        cartId,
-        isSavedForLater: false,
-      },
-    });
-
-    // Return updated cart for UI
-    return getCartForUI();
-  } catch (error) {
-    console.error("clearCartAction error:", error);
-    return {
-      success: false,
-      message: "Failed to clear cart",
-    };
   }
 }

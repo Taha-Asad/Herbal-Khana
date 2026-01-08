@@ -1,11 +1,12 @@
-import { categories } from "@/lib/products";
-import { FilterState } from "@/types/product";
-import { formatCurrency } from "@/utils/OrderRelated";
+// components/ui/filters/ActiveFilters.tsx
+"use client";
+
 import { X } from "lucide-react";
+import type { FilterState } from "@/types/product";
 
 interface ActiveFiltersProps {
   filters: FilterState;
-  onRemoveFilter: (key: keyof FilterState, value?: string) => void;
+  onRemoveFilter: (key: keyof FilterState, value?: string | number) => void;
   onClearAll: () => void;
 }
 
@@ -16,62 +17,100 @@ export default function ActiveFilters({
 }: ActiveFiltersProps) {
   const activeFilters: {
     key: keyof FilterState;
-    value: string;
+    value: string | number;
     label: string;
   }[] = [];
 
-  filters.categories.forEach((c) => {
-    const cat = categories.find((cat) => cat.id === c);
-    if (cat)
-      activeFilters.push({ key: "categories", value: c, label: cat.name });
+  // Categories
+  filters.categories.forEach((cat) => {
+    activeFilters.push({
+      key: "categories",
+      value: cat,
+      label: `Category: ${cat}`,
+    });
   });
 
-  filters.offers.forEach((o) => {
-    const labels: Record<string, string> = {
-      "on-sale": "On Sale",
-      new: "New Arrivals",
-      bestseller: "Bestsellers",
-    };
-    activeFilters.push({ key: "offers", value: o, label: labels[o] || o });
-  });
-
-  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 10000) {
+  // Price Range
+  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
     activeFilters.push({
       key: "priceRange",
-      value: "price",
-      label: `${formatCurrency(filters.priceRange[0])} - ${formatCurrency(
-        filters.priceRange[1]
-      )}`,
+      value: "custom",
+      label: `Price: PKR ${filters.priceRange[0].toLocaleString()} - ${filters.priceRange[1].toLocaleString()}`,
     });
   }
 
-  if (activeFilters.length === 0) return null;
+  // Ratings
+  filters.ratings.forEach((rating) => {
+    activeFilters.push({
+      key: "ratings",
+      value: rating,
+      label: `${rating}+ Stars`,
+    });
+  });
+
+  // Availability
+  filters.availability.forEach((avail) => {
+    activeFilters.push({
+      key: "availability",
+      value: avail,
+      label: avail === "in-stock" ? "In Stock" : avail,
+    });
+  });
+
+  // Offers
+  filters.offers.forEach((offer) => {
+    const labels: Record<string, string> = {
+      "on-sale": "On Sale",
+      new: "New Arrivals",
+      featured: "Featured",
+    };
+    activeFilters.push({
+      key: "offers",
+      value: offer,
+      label: labels[offer] || offer,
+    });
+  });
+
+  // Search
+  if (filters.search && filters.search.trim()) {
+    activeFilters.push({
+      key: "search",
+      value: filters.search,
+      label: `Search: "${filters.search}"`,
+    });
+  }
+
+  if (activeFilters.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="bg-[#FFF9E6]/50 rounded-xl p-4 mb-6 border border-[#DDA200]/20">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-stone-600 font-medium">
-          Active Filters:
-        </span>
-        {activeFilters.map((filter, index) => (
-          <button
-            key={`${filter.key}-${filter.value}-${index}`}
-            onClick={() => onRemoveFilter(filter.key, filter.value)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-[#b38600] 
-              text-sm font-medium rounded-full border-2 border-[#DDA200]/30
-              hover:bg-[#DDA200] hover:text-white hover:border-[#DDA200] transition-all duration-200 shadow-sm"
-          >
-            {filter.label}
-            <X className="w-3.5 h-3.5" />
-          </button>
-        ))}
+    <div className="mb-6 flex flex-wrap items-center gap-2">
+      <span className="text-sm font-medium text-stone-600">
+        Active Filters:
+      </span>
+
+      {activeFilters.map((filter, index) => (
+        <button
+          key={`${filter.key}-${filter.value}-${index}`}
+          onClick={() => onRemoveFilter(filter.key, filter.value)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF9E6] text-[#DDA200] 
+            text-sm font-medium rounded-lg border border-[#DDA200]/30 
+            hover:bg-[#DDA200] hover:text-white transition-colors group"
+        >
+          {filter.label}
+          <X className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" />
+        </button>
+      ))}
+
+      {activeFilters.length > 1 && (
         <button
           onClick={onClearAll}
-          className="text-sm text-red-500 hover:text-red-600 font-semibold ml-2 hover:underline transition-colors"
+          className="text-sm text-stone-500 hover:text-red-500 font-medium underline underline-offset-2 ml-2"
         >
           Clear All
         </button>
-      </div>
+      )}
     </div>
   );
 }

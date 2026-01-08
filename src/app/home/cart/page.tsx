@@ -129,7 +129,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-white via-[#FFF8E1]/30 to-white">
+    <div className="relative py-30 min-h-screen bg-gradient-to-br from-white via-[#FFF8E1]/30 to-white">
       {/* CSS Styles */}
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
