@@ -789,11 +789,13 @@ export async function getRecommendedProducts(): Promise<{
         },
       },
     });
+    type ProductWithRelations = (typeof products)[number];
 
     const recommendations: RecommendedProduct[] = products
-      .filter((p) => p.productVariants.length > 0)
+      .filter((p: ProductWithRelations) => p.productVariants.length > 0)
       .map((product) => {
         const variant = product.productVariants[0];
+
         const avgRating =
           product.reviews.length > 0
             ? product.reviews.reduce((sum, r) => sum + r.rating, 0) /
