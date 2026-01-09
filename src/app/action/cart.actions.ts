@@ -650,14 +650,12 @@ export async function getCartForUI(): Promise<CartResult> {
         },
       };
     }
+    type CartItemFromDb = (typeof cart.items)[number];
 
-    const activeItems = cart.items.filter(
-      (item): item is (typeof cart.items)[number] => !item.isSavedForLater
-    );
+    const itemsFromDb: CartItemFromDb[] = cart.items;
+    const activeItems = itemsFromDb.filter((item) => !item.isSavedForLater);
 
-    const savedItems = cart.items.filter(
-      (item): item is (typeof cart.items)[number] => item.isSavedForLater
-    );
+    const savedItems = itemsFromDb.filter((item) => item.isSavedForLater);
 
     const items = mapCartItems(activeItems);
     const savedItemsMapped = mapCartItems(savedItems);
