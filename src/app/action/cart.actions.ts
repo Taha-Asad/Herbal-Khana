@@ -651,8 +651,13 @@ export async function getCartForUI(): Promise<CartResult> {
       };
     }
 
-    const activeItems = cart.items.filter((i) => !i.isSavedForLater);
-    const savedItems = cart.items.filter((i) => i.isSavedForLater);
+    const activeItems = cart.items.filter(
+      (item): item is (typeof cart.items)[number] => !item.isSavedForLater
+    );
+
+    const savedItems = cart.items.filter(
+      (item): item is (typeof cart.items)[number] => item.isSavedForLater
+    );
 
     const items = mapCartItems(activeItems);
     const savedItemsMapped = mapCartItems(savedItems);
