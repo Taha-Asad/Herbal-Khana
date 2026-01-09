@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Pending</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background-color: #f5f5f4;
+        margin: 0;
+        padding: 0;
+        color: #44403c;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #dda200 0%, #b38600 100%);
+        padding: 40px 20px;
+        text-align: center;
+      }
+      .logo-container {
+        background-color: white;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 15px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .header h1 {
+        color: white;
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      .content {
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .greeting {
+        font-size: 20px;
+        font-weight: 600;
+        color: #1c1917;
+        margin-bottom: 16px;
+      }
+      .message {
+        line-height: 1.6;
+        margin-bottom: 24px;
+        color: #57534e;
+      }
+      .order-box {
+        background: #fafaf9;
+        border: 1px dashed #e7e5e4;
+        border-radius: 10px;
+        padding: 16px;
+        margin: 24px 0;
+        text-align: left;
+        font-size: 14px;
+      }
+      .order-box strong {
+        color: #1c1917;
+      }
+      .button {
+        display: inline-block;
+        padding: 16px 32px;
+        background-color: #dda200;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+      .footer {
+        background-color: #fafaf9;
+        padding: 24px;
+        text-align: center;
+        font-size: 12px;
+        color: #a8a29e;
+        border-top: 1px solid #e7e5e4;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <img
+            src="https://your-domain.com/sample-logo2.jpeg"
+            alt="Herbal Khana"
+            width="40"
+            height="40"
+          />
+        </div>
+        <h1>Payment Pending</h1>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <div class="greeting">
+          Hello<% if (typeof name !== "undefined") { %>, <%= name %><% } %>
+        </div>
+
+        <p class="message">
+          Your order has been placed successfully, but we’re waiting for your
+          payment confirmation.
+        </p>
+
+        <div class="order-box">
+          <p><strong>Order Number:</strong> <%= orderNumber %></p>
+          <p>
+            <strong>Total Amount:</strong> PKR <%= total.toLocaleString() %>
+          </p>
+          <p><strong>Payment Method:</strong> <%= paymentMethod %></p>
+        </div>
+
+        <p class="message">
+          Please upload your payment proof so we can process your order without
+          delays.
+        </p>
+
+        <a href="<%= paymentProofUrl %>" class="button">
+          Upload Payment Proof
+        </a>
+
+        <p class="message" style="font-size: 14px; margin-top: 30px">
+          Once verified, your order will move to processing and you’ll be
+          notified immediately.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        &copy; <%= new Date().getFullYear() %> Herbal Khana. All rights
+        reserved.
+      </div>
+    </div>
+  </body>
+</html>

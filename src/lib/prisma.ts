@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool, PoolConfig } from "pg";
+import { PrismaClient } from "@prisma/client";
 
 // Pool configuration
 const poolConfig: PoolConfig = {
