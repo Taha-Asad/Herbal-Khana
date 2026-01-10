@@ -4,7 +4,6 @@ import {
   CheckCircle,
   Clock,
   Home,
-  Navigation,
   RefreshCw,
   Truck,
   Warehouse,
@@ -12,25 +11,23 @@ import {
 } from "lucide-react";
 
 const STATUS_ICONS: Record<OrderStatus, React.ElementType> = {
-  pending: Clock,
-  confirmed: CheckCircle,
-  processing: Warehouse,
-  shipped: Truck,
-  out_for_delivery: Navigation,
-  delivered: Home,
-  cancelled: XCircle,
-  returned: RefreshCw,
+  PENDING: Clock,
+  PAID: CheckCircle,
+  PROCESSING: Warehouse,
+  SHIPPED: Truck,
+  DELIVERED: Home,
+  CANCELLED: XCircle,
+  REFUNDED: RefreshCw,
 };
 export default function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
   const statusLabels: Record<OrderStatus, string> = {
-    pending: "Pending",
-    confirmed: "Confirmed",
-    processing: "Processing",
-    shipped: "Shipped",
-    out_for_delivery: "Out for Delivery",
-    delivered: "Delivered",
-    cancelled: "Cancelled",
-    returned: "Returned",
+    PENDING: "Pending",
+    PAID: "Paid",
+    PROCESSING: "Processing",
+    SHIPPED: "Shipped",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
+    REFUNDED: "Refunded",
   };
 
   const sizeClasses = {

@@ -1,6 +1,6 @@
-import test1 from "../../public/testimonial1.jpg";
-import test2 from "../../public/testimonial2.jpg";
-import test3 from "../../public/testimonial3.jpg";
+import test1 from "../../../public/testimonial1.jpg";
+import test2 from "../../../public/testimonial2.jpg";
+import test3 from "../../../public/testimonial3.jpg";
 
 export const testimonials = [
   {

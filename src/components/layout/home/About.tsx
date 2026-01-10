@@ -1,5 +1,5 @@
 import StatsCard from "@/components/ui/StatsCard";
-import { aboutCards } from "@/lib/statsCards";
+import { aboutCards } from "@/lib/dummyData/statsCards";
 import React from "react";
 
 const About = () => {

@@ -1,7 +1,7 @@
 // components/navbar/DesktopNavbar.tsx
 "use client";
 
-import { navlinks } from "@/lib/navlinks";
+import { navlinks } from "@/lib/dummyData/navlinks";
 import { ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import React from "react";

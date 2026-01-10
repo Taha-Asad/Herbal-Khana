@@ -1,81 +1,53 @@
-// lib/actions/checkout.actions.ts
+// app/action/checkout.actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { nanoid } from "nanoid";
-
-import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import {
-  AddressOption,
-  CartItemWithDetails,
-  CheckoutFormData,
+  CheckoutState,
+  CheckoutItem,
   CheckoutSummary,
   ShippingMethodOption,
+  CheckoutAddress,
+  CheckoutValidationResult,
 } from "@/types/checkout";
-import { sendPaymentPendingEmail } from "@/lib/order-emails";
+import prisma from "@/lib/prisma";
+import { getServerAuthSession } from "./user.action";
 
-// Generate unique order number
-function generateOrderNumber(): string {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = nanoid(6).toUpperCase();
-  return `ORD-${timestamp}-${random}`;
-}
-
-// Calculate estimated delivery date
-function calculateEstimatedDelivery(estimatedDays: string): Date {
-  const days = parseInt(
-    estimatedDays.split("-")[1] || estimatedDays.split("-")[0] || "7"
-  );
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date;
-}
-
-async function getCurrentUser() {
-  try {
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) return null;
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-      },
-    });
-
-    return user;
-  } catch (error) {
-    console.error("getCurrentUser error:", error);
-    return null;
-  }
-}
-
-// Get cart with items for checkout
-export async function getCheckoutCart(): Promise<{
+// Get checkout data for a user's cart
+export async function getCheckoutData(): Promise<{
   success: boolean;
-  data?: {
-    cart: {
-      id: string;
-      appliedPromoCode: string | null;
-    };
-    items: CartItemWithDetails[];
-    subtotal: number;
-  };
+  data?: CheckoutState;
+  savedAddresses?: CheckoutAddress[];
+  shippingMethods?: ShippingMethodOption[];
+  userEmail?: string;
   error?: string;
 }> {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: "Please login to continue." };
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, error: "Please login to checkout" };
     }
 
+    const userId = session.user.id;
+
+    // Get user with addresses
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        addresses: {
+          orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+        },
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Get active cart with items
     const cart = await prisma.cart.findFirst({
       where: {
-        userId: user.id,
+        userId,
         status: "ACTIVE",
       },
       include: {
@@ -100,566 +72,524 @@ export async function getCheckoutCart(): Promise<{
     });
 
     if (!cart || cart.items.length === 0) {
-      return { success: false, error: "Your cart is empty." };
+      return { success: false, error: "Your cart is empty" };
     }
 
-    // Validate stock availability
-    for (const item of cart.items) {
-      if (item.variant.stock < item.quantity) {
-        return {
-          success: false,
-          error: `${item.variant.product.name} (${item.variant.size}) is out of stock.`,
-        };
-      }
-    }
+    // Transform cart items
+    const items: CheckoutItem[] = cart.items.map((item) => ({
+      variantId: item.variantId,
+      productId: item.variant.productId,
+      name: item.variant.product.name,
+      variantName: item.variant.name,
+      sku: item.variant.sku,
+      image: item.variant.product.images[0]?.url || null,
+      price: Number(item.variant.price),
+      quantity: item.quantity,
+      subtotal: Number(item.variant.price) * item.quantity,
+      stock: item.variant.stock,
+    }));
 
-    const subtotal = cart.items.reduce(
-      (sum, item) => sum + Number(item.variant.price) * item.quantity,
-      0
-    );
+    // Calculate subtotal
+    const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-    return {
-      success: true,
-      data: {
-        cart: {
-          id: cart.id,
-          appliedPromoCode: cart.appliedPromoCode,
-        },
-        items: cart.items as unknown as CartItemWithDetails[],
-        subtotal,
-      },
-    };
-  } catch (error) {
-    console.error("Error getting checkout cart:", error);
-    return { success: false, error: "An error occurred." };
-  }
-}
+    // Transform saved addresses
+    const savedAddresses: CheckoutAddress[] = user.addresses.map((addr) => ({
+      id: addr.id,
+      name: addr.name,
+      phone: addr.phone,
+      line1: addr.line1,
+      line2: addr.line2 || undefined,
+      city: addr.city,
+      state: addr.state || undefined,
+      postal: addr.postal,
+      country: addr.country,
+      isDefault: addr.isDefault,
+      label: addr.label || undefined,
+    }));
 
-// Get user addresses
-export async function getUserAddresses(): Promise<{
-  success: boolean;
-  data?: AddressOption[];
-  error?: string;
-}> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: "Please login to continue." };
-    }
+    // Get default address
+    const defaultAddress =
+      savedAddresses.find((a) => a.isDefault) || savedAddresses[0] || null;
 
-    const addresses = await prisma.address.findMany({
-      where: { userId: user.id },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-    });
-
-    return { success: true, data: addresses };
-  } catch (error) {
-    console.error("Error getting addresses:", error);
-    return { success: false, error: "An error occurred." };
-  }
-}
-
-// Create new address
-export async function createAddress(data: {
-  label?: string;
-  name: string;
-  phone: string;
-  line1: string;
-  line2?: string;
-  city: string;
-  state?: string;
-  postal: string;
-  isDefault?: boolean;
-}): Promise<{ success: boolean; data?: AddressOption; error?: string }> {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: "Please login to continue." };
-    }
-
-    // If setting as default, unset other defaults
-    if (data.isDefault) {
-      await prisma.address.updateMany({
-        where: { userId: user.id, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
-
-    const address = await prisma.address.create({
-      data: {
-        userId: user.id,
-        label: data.label,
-        name: data.name,
-        phone: data.phone,
-        line1: data.line1,
-        line2: data.line2,
-        city: data.city,
-        state: data.state,
-        postal: data.postal,
-        isDefault: data.isDefault || false,
-      },
-    });
-
-    revalidatePath("/checkout");
-    return { success: true, data: address };
-  } catch (error) {
-    console.error("Error creating address:", error);
-    return { success: false, error: "An error occurred." };
-  }
-}
-
-// Get available shipping methods
-export async function getShippingMethods(): Promise<{
-  success: boolean;
-  data?: ShippingMethodOption[];
-  error?: string;
-}> {
-  try {
-    const methods = await prisma.shippingMethod.findMany({
+    // Get shipping methods
+    const shippingMethodsData = await prisma.shippingMethod.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
     });
 
-    return { success: true, data: methods as ShippingMethodOption[] };
+    const shippingMethods: ShippingMethodOption[] = shippingMethodsData.map(
+      (method) => ({
+        id: method.id,
+        name: method.name,
+        description: method.description || undefined,
+        price: Number(method.price),
+        freeAbove: method.freeAbove ? Number(method.freeAbove) : undefined,
+        estimatedDays: method.estimatedDays,
+      })
+    );
+
+    // Default shipping method
+    const defaultShipping = shippingMethods[0] || null;
+
+    // Calculate initial shipping cost
+    let shippingCost = defaultShipping?.price || 0;
+    if (defaultShipping?.freeAbove && subtotal >= defaultShipping.freeAbove) {
+      shippingCost = 0;
+    }
+
+    // Check for applied promo code
+    let promoDiscount = 0;
+    let appliedPromoCode: string | undefined;
+
+    if (cart.appliedPromoCode) {
+      const promo = await prisma.promoCode.findUnique({
+        where: { code: cart.appliedPromoCode },
+      });
+
+      if (promo && promo.isActive) {
+        appliedPromoCode = promo.code;
+
+        if (promo.type === "PERCENTAGE") {
+          promoDiscount = subtotal * (Number(promo.value) / 100);
+          if (promo.maxDiscount) {
+            promoDiscount = Math.min(promoDiscount, Number(promo.maxDiscount));
+          }
+        } else if (promo.type === "FIXED") {
+          promoDiscount = Number(promo.value);
+        } else if (promo.type === "FREE_SHIPPING") {
+          shippingCost = 0;
+        }
+      }
+    }
+
+    const summary: CheckoutSummary = {
+      subtotal,
+      shippingCost,
+      tax: 0,
+      discount: 0,
+      promoDiscount,
+      total: subtotal + shippingCost - promoDiscount,
+      appliedPromoCode,
+    };
+
+    const checkoutState: CheckoutState = {
+      cartId: cart.id,
+      items,
+      shippingAddress: defaultAddress,
+      billingAddress: defaultAddress,
+      sameAsShipping: true,
+      shippingMethod: defaultShipping,
+      paymentMethod: null,
+      summary,
+      customerNote: cart.notes || undefined,
+    };
+
+    return {
+      success: true,
+      data: checkoutState,
+      savedAddresses,
+      shippingMethods,
+      userEmail: user.email,
+    };
   } catch (error) {
-    console.error("Error getting shipping methods:", error);
-    return { success: false, error: "An error occurred." };
+    console.error("Error getting checkout data:", error);
+    return { success: false, error: "Failed to load checkout data" };
   }
 }
 
-// Validate and apply promo code
+// Validate cart for checkout
+export async function validateCheckout(
+  cartId: string
+): Promise<CheckoutValidationResult> {
+  try {
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, message: "Please login to checkout" };
+    }
+
+    const cart = await prisma.cart.findFirst({
+      where: {
+        id: cartId,
+        userId: session.user.id,
+        status: "ACTIVE",
+      },
+      include: {
+        items: {
+          where: { isSavedForLater: false },
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!cart) {
+      return { success: false, message: "Cart not found" };
+    }
+
+    if (cart.items.length === 0) {
+      return { success: false, message: "Cart is empty" };
+    }
+
+    // Validate stock for each item
+    const stockIssues: string[] = [];
+
+    for (const item of cart.items) {
+      if (!item.variant.product.isActive) {
+        stockIssues.push(`${item.variant.product.name} is no longer available`);
+      } else if (item.variant.stock < item.quantity) {
+        if (item.variant.stock === 0) {
+          stockIssues.push(
+            `${item.variant.product.name} - ${item.variant.name} is out of stock`
+          );
+        } else {
+          stockIssues.push(
+            `Only ${item.variant.stock} units available for ${item.variant.product.name} - ${item.variant.name}`
+          );
+        }
+      }
+    }
+
+    if (stockIssues.length > 0) {
+      return {
+        success: false,
+        message: "Some items have stock issues",
+        issues: stockIssues,
+      };
+    }
+
+    return { success: true, message: "Cart is valid for checkout" };
+  } catch (error) {
+    console.error("Error validating checkout:", error);
+    return { success: false, message: "Failed to validate cart" };
+  }
+}
+
+// Validate promo code
 export async function validatePromoCode(
   code: string,
   subtotal: number
 ): Promise<{
   success: boolean;
-  data?: {
-    id: string;
-    code: string;
-    type: string;
-    value: number;
-    discount: number;
-    message: string;
-  };
-  error?: string;
+  discount?: number;
+  message?: string;
 }> {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: "Please login to continue." };
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, message: "Please login" };
     }
 
     const promo = await prisma.promoCode.findUnique({
       where: { code: code.toUpperCase() },
-      include: {
-        usedBy: {
-          where: { userId: user.id },
-        },
-      },
     });
 
     if (!promo) {
-      return { success: false, error: "Invalid promo code." };
+      return { success: false, message: "Invalid promo code" };
     }
 
     if (!promo.isActive) {
-      return { success: false, error: "This promo code is no longer active." };
+      return { success: false, message: "This promo code is no longer active" };
     }
 
-    if (promo.expiresAt && new Date() > promo.expiresAt) {
-      return { success: false, error: "This promo code has expired." };
+    if (promo.expiresAt && promo.expiresAt < new Date()) {
+      return { success: false, message: "This promo code has expired" };
     }
 
-    if (promo.startsAt && new Date() < promo.startsAt) {
-      return { success: false, error: "This promo code is not yet active." };
+    if (promo.startsAt && promo.startsAt > new Date()) {
+      return { success: false, message: "This promo code is not yet active" };
     }
 
     if (promo.maxUses && promo.usedCount >= promo.maxUses) {
       return {
         success: false,
-        error: "This promo code has reached its usage limit.",
-      };
-    }
-
-    if (promo.usedBy.length >= promo.maxUsesPerUser) {
-      return {
-        success: false,
-        error: "You have already used this promo code.",
+        message: "This promo code has reached its usage limit",
       };
     }
 
     if (promo.minOrderAmount && subtotal < Number(promo.minOrderAmount)) {
       return {
         success: false,
-        error: `Minimum order amount is PKR ${Number(
+        message: `Minimum order amount is PKR ${Number(
           promo.minOrderAmount
-        ).toLocaleString()}.`,
+        ).toLocaleString()}`,
+      };
+    }
+
+    // Check if user has already used this code
+    const userUsage = await prisma.userPromoCode.findUnique({
+      where: {
+        userId_promoCodeId: {
+          userId: session.user.id,
+          promoCodeId: promo.id,
+        },
+      },
+    });
+
+    if (userUsage) {
+      return {
+        success: false,
+        message: "You have already used this promo code",
       };
     }
 
     // Check first order only
     if (promo.isFirstOrderOnly) {
-      const orderCount = await prisma.order.count({
-        where: { userId: user.id },
+      const previousOrders = await prisma.order.count({
+        where: { userId: session.user.id },
       });
-      if (orderCount > 0) {
+
+      if (previousOrders > 0) {
         return {
           success: false,
-          error: "This promo code is for first orders only.",
+          message: "This promo code is only valid for first orders",
         };
       }
     }
 
     // Calculate discount
     let discount = 0;
-    const value = Number(promo.value);
-
-    switch (promo.type) {
-      case "PERCENTAGE":
-        discount = (subtotal * value) / 100;
-        if (promo.maxDiscount) {
-          discount = Math.min(discount, Number(promo.maxDiscount));
-        }
-        break;
-      case "FIXED":
-        discount = value;
-        break;
-      case "FREE_SHIPPING":
-        // Handled separately in checkout
-        discount = 0;
-        break;
+    if (promo.type === "PERCENTAGE") {
+      discount = subtotal * (Number(promo.value) / 100);
+      if (promo.maxDiscount) {
+        discount = Math.min(discount, Number(promo.maxDiscount));
+      }
+    } else if (promo.type === "FIXED") {
+      discount = Math.min(Number(promo.value), subtotal);
     }
+
+    // Apply to cart
+    await prisma.cart.updateMany({
+      where: {
+        userId: session.user.id,
+        status: "ACTIVE",
+      },
+      data: {
+        appliedPromoCode: promo.code,
+      },
+    });
+
+    revalidatePath("/home/checkout");
 
     return {
       success: true,
-      data: {
-        id: promo.id,
-        code: promo.code,
-        type: promo.type,
-        value,
-        discount,
-        message:
-          promo.type === "FREE_SHIPPING"
-            ? "Free shipping applied!"
-            : `PKR ${discount.toLocaleString()} discount applied!`,
-      },
+      discount,
+      message: `Promo code applied! You save PKR ${discount.toLocaleString()}`,
     };
   } catch (error) {
     console.error("Error validating promo code:", error);
-    return { success: false, error: "An error occurred." };
+    return { success: false, message: "Failed to validate promo code" };
   }
 }
 
-// Calculate checkout summary
-export async function calculateCheckoutSummary(data: {
-  shippingMethodId: string;
-  promoCode?: string;
-}): Promise<{ success: boolean; data?: CheckoutSummary; error?: string }> {
+// Remove promo code
+export async function removePromoCodeFromCart(): Promise<{
+  success: boolean;
+  message?: string;
+}> {
   try {
-    const cartResult = await getCheckoutCart();
-    if (!cartResult.success || !cartResult.data) {
-      return { success: false, error: cartResult.error };
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, message: "Please login" };
     }
 
-    const { subtotal } = cartResult.data;
-
-    // Get shipping method
-    const shippingMethod = await prisma.shippingMethod.findUnique({
-      where: { id: data.shippingMethodId },
+    await prisma.cart.updateMany({
+      where: {
+        userId: session.user.id,
+        status: "ACTIVE",
+      },
+      data: {
+        appliedPromoCode: null,
+      },
     });
 
-    if (!shippingMethod) {
-      return { success: false, error: "Invalid shipping method." };
-    }
+    revalidatePath("/home/checkout");
 
-    let shippingCost = Number(shippingMethod.price);
-    let promoDiscount = 0;
-
-    // Apply promo code if provided
-    if (data.promoCode) {
-      const promoResult = await validatePromoCode(data.promoCode, subtotal);
-      if (promoResult.success && promoResult.data) {
-        if (promoResult.data.type === "FREE_SHIPPING") {
-          shippingCost = 0;
-        } else {
-          promoDiscount = promoResult.data.discount;
-        }
-      }
-    }
-
-    // Check free shipping threshold
-    if (
-      shippingMethod.freeAbove &&
-      subtotal >= Number(shippingMethod.freeAbove)
-    ) {
-      shippingCost = 0;
-    }
-
-    // Calculate tax (assuming 0% for Pakistan, adjust if needed)
-    const tax = 0;
-
-    const total = subtotal + shippingCost + tax - promoDiscount;
-
-    return {
-      success: true,
-      data: {
-        subtotal,
-        shippingCost,
-        tax,
-        discount: 0,
-        promoDiscount,
-        total: Math.max(0, total),
-        currency: "PKR",
-      },
-    };
+    return { success: true, message: "Promo code removed" };
   } catch (error) {
-    console.error("Error calculating summary:", error);
-    return { success: false, error: "An error occurred." };
+    console.error("Error removing promo code:", error);
+    return { success: false, message: "Failed to remove promo code" };
   }
 }
 
-// Create order
-export async function createOrder(formData: CheckoutFormData): Promise<{
+// Save new address
+export async function saveAddress(
+  address: Omit<CheckoutAddress, "id">,
+  setAsDefault: boolean = false
+): Promise<{
   success: boolean;
-  data?: {
-    orderId: string;
-    orderNumber: string;
-    requiresProof: boolean;
-    redirectUrl: string;
-  };
+  data?: CheckoutAddress;
   error?: string;
 }> {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: "Please login to continue." };
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, error: "Please login" };
     }
 
-    // Get cart
-    const cartResult = await getCheckoutCart();
-    if (!cartResult.success || !cartResult.data) {
-      return { success: false, error: cartResult.error };
-    }
-
-    const { cart, items, subtotal } = cartResult.data;
-
-    // Get addresses
-    const shippingAddress = await prisma.address.findUnique({
-      where: { id: formData.shippingAddressId, userId: user.id },
-    });
-
-    if (!shippingAddress) {
-      return { success: false, error: "Invalid shipping address." };
-    }
-
-    const billingAddress = formData.sameAsShipping
-      ? shippingAddress
-      : await prisma.address.findUnique({
-          where: { id: formData.billingAddressId, userId: user.id },
-        });
-
-    if (!billingAddress) {
-      return { success: false, error: "Invalid billing address." };
-    }
-
-    // Get shipping method
-    const shippingMethod = await prisma.shippingMethod.findUnique({
-      where: { id: formData.shippingMethodId },
-    });
-
-    if (!shippingMethod) {
-      return { success: false, error: "Invalid shipping method." };
-    }
-
-    // Calculate shipping cost
-    let shippingCost = Number(shippingMethod.price);
-    if (
-      shippingMethod.freeAbove &&
-      subtotal >= Number(shippingMethod.freeAbove)
-    ) {
-      shippingCost = 0;
-    }
-
-    // Handle promo code
-    let promoDiscount = 0;
-    let promoCodeRecord = null;
-    let promoSnapshot = null;
-
-    if (formData.promoCode) {
-      const promoResult = await validatePromoCode(formData.promoCode, subtotal);
-      if (promoResult.success && promoResult.data) {
-        promoCodeRecord = await prisma.promoCode.findUnique({
-          where: { code: formData.promoCode.toUpperCase() },
-        });
-
-        if (promoResult.data.type === "FREE_SHIPPING") {
-          shippingCost = 0;
-        } else {
-          promoDiscount = promoResult.data.discount;
-        }
-
-        promoSnapshot = {
-          code: promoResult.data.code,
-          type: promoResult.data.type,
-          value: promoResult.data.value,
-          discount: promoResult.data.discount,
-        };
-      }
-    }
-
-    const total = subtotal + shippingCost - promoDiscount;
-    const orderNumber = generateOrderNumber();
-    const estimatedDelivery = calculateEstimatedDelivery(
-      shippingMethod.estimatedDays
-    );
-
-    // Determine initial payment status
-    const requiresProof = formData.paymentMethod !== "COD";
-    const initialPaymentStatus =
-      formData.paymentMethod === "COD" ? "PENDING" : "PENDING";
-
-    // Create order in transaction
-    const order = await prisma.$transaction(async (tx) => {
-      // Create order
-      const newOrder = await tx.order.create({
-        data: {
-          orderNumber,
-          userId: user.id,
-          status: "PENDING",
-          paymentStatus: initialPaymentStatus,
-          subtotal,
-          shippingCost,
-          tax: 0,
-          discount: 0,
-          promoDiscount,
-          total,
-          currency: "PKR",
-          shippingMethodId: shippingMethod.id,
-          shippingSnapshot: {
-            name: shippingMethod.name,
-            price: Number(shippingMethod.price),
-            estimatedDays: shippingMethod.estimatedDays,
-          },
-          estimatedDelivery,
-          shippingAddress: {
-            name: shippingAddress.name,
-            phone: shippingAddress.phone,
-            line1: shippingAddress.line1,
-            line2: shippingAddress.line2,
-            city: shippingAddress.city,
-            state: shippingAddress.state,
-            postal: shippingAddress.postal,
-            country: shippingAddress.country,
-          },
-          billingAddress: {
-            name: billingAddress.name,
-            phone: billingAddress.phone,
-            line1: billingAddress.line1,
-            line2: billingAddress.line2,
-            city: billingAddress.city,
-            state: billingAddress.state,
-            postal: billingAddress.postal,
-            country: billingAddress.country,
-          },
-          paymentMethod: formData.paymentMethod,
-          customerNote: formData.customerNote,
-          promoCodeId: promoCodeRecord?.id,
-          promoSnapshot: promoSnapshot || undefined,
-          items: {
-            create: items.map((item) => ({
-              productId: item.variant.product.id,
-              name: `${item.variant.product.name} - ${item.variant.size}`,
-              sku: item.variant.sku,
-              image: item.variant.product.images[0]?.url || null,
-              price: item.variant.price,
-              quantity: item.quantity,
-              subtotal: Number(item.variant.price) * item.quantity,
-            })),
-          },
-          timeline: {
-            create: {
-              status: "PENDING",
-              message: "Order placed successfully",
-            },
-          },
-        },
-      });
-
-      // Update stock
-      for (const item of items) {
-        await tx.productVariant.update({
-          where: { id: item.variant.id },
-          data: {
-            stock: { decrement: item.quantity },
-          },
-        });
-
-        // Update product sales count
-        await tx.product.update({
-          where: { id: item.variant.product.id },
-          data: {
-            salesCount: { increment: item.quantity },
-          },
-        });
-      }
-
-      // Update promo code usage
-      if (promoCodeRecord) {
-        await tx.promoCode.update({
-          where: { id: promoCodeRecord.id },
-          data: { usedCount: { increment: 1 } },
-        });
-
-        await tx.userPromoCode.create({
-          data: {
-            userId: user.id,
-            promoCodeId: promoCodeRecord.id,
-            orderId: newOrder.id,
-          },
-        });
-      }
-
-      // Mark cart as completed
-      await tx.cart.update({
-        where: { id: cart.id },
-        data: { status: "COMPLETED" },
-      });
-
-      return newOrder;
-    });
-
-    // Send appropriate email
-    if (requiresProof) {
-      await sendPaymentPendingEmail({
-        email: user.email,
-        orderNumber,
-        total,
-        paymentMethod: formData.paymentMethod,
-        paymentProofUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/payment-proof?orderId=${order.id}`,
+    // If setting as default, unset other defaults
+    if (setAsDefault) {
+      await prisma.address.updateMany({
+        where: { userId: session.user.id },
+        data: { isDefault: false },
       });
     }
 
-    const redirectUrl = requiresProof
-      ? `/checkout/payment-proof?orderId=${order.id}`
-      : `/checkout/confirmation?orderId=${order.id}`;
+    const newAddress = await prisma.address.create({
+      data: {
+        userId: session.user.id,
+        name: address.name,
+        phone: address.phone,
+        line1: address.line1,
+        line2: address.line2,
+        city: address.city,
+        state: address.state,
+        postal: address.postal,
+        country: address.country,
+        isDefault: setAsDefault,
+      },
+    });
 
-    revalidatePath("/cart");
-    revalidatePath("/checkout");
+    revalidatePath("/home/checkout");
 
     return {
       success: true,
       data: {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        requiresProof,
-        redirectUrl,
+        id: newAddress.id,
+        name: newAddress.name,
+        phone: newAddress.phone,
+        line1: newAddress.line1,
+        line2: newAddress.line2 || undefined,
+        city: newAddress.city,
+        state: newAddress.state || undefined,
+        postal: newAddress.postal,
+        country: newAddress.country,
+        isDefault: newAddress.isDefault,
       },
     };
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.error("Error saving address:", error);
+    return { success: false, error: "Failed to save address" };
+  }
+}
+
+// Update address
+export async function updateAddress(
+  addressId: string,
+  address: Partial<CheckoutAddress>
+): Promise<{
+  success: boolean;
+  data?: CheckoutAddress;
+  error?: string;
+}> {
+  try {
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, error: "Please login" };
+    }
+
+    const updatedAddress = await prisma.address.update({
+      where: {
+        id: addressId,
+        userId: session.user.id,
+      },
+      data: {
+        name: address.name,
+        phone: address.phone,
+        line1: address.line1,
+        line2: address.line2,
+        city: address.city,
+        state: address.state,
+        postal: address.postal,
+        country: address.country,
+      },
+    });
+
+    revalidatePath("/home/checkout");
+
     return {
-      success: false,
-      error: "An error occurred while placing your order.",
+      success: true,
+      data: {
+        id: updatedAddress.id,
+        name: updatedAddress.name,
+        phone: updatedAddress.phone,
+        line1: updatedAddress.line1,
+        line2: updatedAddress.line2 || undefined,
+        city: updatedAddress.city,
+        state: updatedAddress.state || undefined,
+        postal: updatedAddress.postal,
+        country: updatedAddress.country,
+        isDefault: updatedAddress.isDefault,
+      },
     };
+  } catch (error) {
+    console.error("Error updating address:", error);
+    return { success: false, error: "Failed to update address" };
+  }
+}
+
+// Delete address
+export async function deleteAddress(addressId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, error: "Please login" };
+    }
+
+    await prisma.address.delete({
+      where: {
+        id: addressId,
+        userId: session.user.id,
+      },
+    });
+
+    revalidatePath("/home/checkout");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting address:", error);
+    return { success: false, error: "Failed to delete address" };
+  }
+}
+
+// Set address as default
+export async function setDefaultAddress(addressId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const session = await getServerAuthSession();
+    if (!session?.user?.id) {
+      return { success: false, error: "Please login" };
+    }
+
+    // Unset all defaults
+    await prisma.address.updateMany({
+      where: { userId: session.user.id },
+      data: { isDefault: false },
+    });
+
+    // Set new default
+    await prisma.address.update({
+      where: {
+        id: addressId,
+        userId: session.user.id,
+      },
+      data: { isDefault: true },
+    });
+
+    revalidatePath("/home/checkout");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error setting default address:", error);
+    return { success: false, error: "Failed to set default address" };
   }
 }

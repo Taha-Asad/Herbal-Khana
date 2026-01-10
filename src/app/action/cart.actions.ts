@@ -638,10 +638,10 @@ export async function getCartForUI(): Promise<CartResult> {
         itemCount: 0,
         savingsTotal: 0,
       };
-
       return {
         success: true,
         data: {
+          cartId,
           items: [],
           savedItems: [],
           summary: emptySummary,
@@ -712,6 +712,7 @@ export async function getCartForUI(): Promise<CartResult> {
     return {
       success: true,
       data: {
+        cartId: cart.id,
         items,
         savedItems: savedItemsMapped,
         summary,

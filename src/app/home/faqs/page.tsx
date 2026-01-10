@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Search } from "lucide-react";
-import { categories, faqs } from "@/lib/faq";
+import { categories, faqs } from "@/lib/dummyData/faq";
 import FAQItem from "@/components/layout/home/Faqs/FAQItem";
 import FAQhero from "@/components/layout/home/Faqs/FAQhero";
 import QuickLinks from "@/components/layout/home/Faqs/QuickLinks";

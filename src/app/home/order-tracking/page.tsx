@@ -1,7 +1,8 @@
 // app/order-tracking/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Package,
@@ -10,122 +11,109 @@ import {
   MapPin,
   ArrowRight,
   ChevronRight,
-  User,
   CreditCard,
   Shield,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
-import {
-  OrderDetails,
-  TrackingEvent,
+import type {
+  DisplayAddress,
+  TrackingData,
   TrackingSearchParams,
 } from "@/types/order";
 import OrderSearchForm from "@/components/layout/home/OrderTracking/OrderSearchForm";
-import OrderSummary from "@/components/layout/home/OrderTracking/OrderSummary";
 import TrackingTimeline from "@/components/layout/home/OrderTracking/TrackingTimeline";
 import OrderItemsList from "@/components/layout/home/OrderTracking/OrderItemsList";
-import DeliveryMapPlaceholder from "@/components/layout/home/OrderTracking/DeliveryMapPlaceholder";
 import PaymentSummary from "@/components/layout/home/OrderTracking/PaymentSummary";
-import ExpandableSection from "@/components/layout/home/OrderTracking/ExpandableSection";
-import NeedHelpSection from "@/components/layout/home/OrderTracking/NeedHelpSection";
 import AddressCard from "@/components/layout/home/OrderTracking/AddressCard";
-import { mockOrderData } from "@/lib/OrderTracking";
+import NeedHelpSection from "@/components/layout/home/OrderTracking/NeedHelpSection";
+import OrderSummary from "@/components/layout/home/OrderTracking/OrderSummary";
 
 // =============================================================================
-// API SERVICE (Ready for Backend Integration)
+// TYPES
 // =============================================================================
-const OrderTrackingAPI = {
-  // Search order by ID and email/phone
-  async searchOrder(
-    params: TrackingSearchParams
-  ): Promise<OrderDetails | null> {
-    // TODO: Replace with actual API call
-    // const response = await fetch(`/api/orders/track`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(params),
-    // });
-    // return response.json();
-
-    // Simulating API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Mock validation
-    if (params.orderId.toLowerCase().includes("ord")) {
-      return mockOrderData;
-    }
-    return null;
-  },
-
-  // Get order by ID (for authenticated users)
-  async getOrderById(): Promise<OrderDetails | null> {
-    // TODO: Replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return mockOrderData;
-  },
-
-  // Refresh tracking status
-  async refreshTracking(): Promise<TrackingEvent[]> {
-    // TODO: Replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    return mockOrderData.trackingHistory;
-  },
+export const emptyAddress: DisplayAddress = {
+  name: "",
+  phone: "",
+  street: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "",
 };
+interface ErrorStateProps {
+  message: string;
+  onRetry: () => void;
+}
 
-// Error State Component
-// interface ErrorStateProps {
-//   message: string;
-//   onRetry: () => void;
-// }
-
-// function ErrorState({ message, onRetry }: ErrorStateProps) {
-//   return (
-//     <div className="text-center py-16 px-4">
-//       <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-//         <AlertCircle className="w-10 h-10 text-red-500" />
-//       </div>
-//       <h3 className="text-2xl font-bold text-stone-800 mb-2">
-//         Order Not Found
-//       </h3>
-//       <p className="text-stone-600 mb-8 max-w-md mx-auto">{message}</p>
-//       <button
-//         onClick={onRetry}
-//         className="inline-flex items-center gap-2 px-6 py-3 bg-[#DDA200] text-white
-//           font-semibold rounded-xl hover:bg-[#b38600] transition-colors duration-300"
-//       >
-//         <RefreshCw className="w-5 h-5" />
-//         Try Again
-//       </button>
-//     </div>
-//   );
-// }
+function ErrorState({ message, onRetry }: ErrorStateProps) {
+  return (
+    <div className="text-center py-16 px-4">
+      <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+        <AlertCircle className="w-10 h-10 text-red-500" />
+      </div>
+      <h3 className="text-2xl font-bold text-stone-800 mb-2">
+        Order Not Found
+      </h3>
+      <p className="text-stone-600 mb-8 max-w-md mx-auto">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 px-6 py-3 bg-[#DDA200] text-white font-semibold rounded-xl hover:bg-[#b38600] transition-colors duration-300"
+      >
+        <RefreshCw className="w-5 h-5" />
+        Try Again
+      </button>
+    </div>
+  );
+}
 
 // =============================================================================
 // MAIN PAGE COMPONENT
 // =============================================================================
 export default function OrderTrackingPage() {
+  const searchParams = useSearchParams();
+  const initialOrderId = searchParams.get("order") || "";
+
   const [searchState, setSearchState] = useState<
     "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [orderData, setOrderData] = useState<OrderDetails | null>(null);
-  const [, setErrorMessage] = useState("");
+  >(initialOrderId ? "loading" : "idle");
+  const [orderData, setOrderData] = useState<TrackingData | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // avoid comparisons inside narrowed JSX branches by deriving a boolean here
   const isLoading = searchState === "loading";
+
+  // Auto-search if order ID is in URL
+  useEffect(() => {
+    if (initialOrderId) {
+      // For URL-based tracking, we need the user to still verify with email/phone
+      setSearchState("idle");
+    }
+  }, [initialOrderId]);
 
   const handleSearch = async (params: TrackingSearchParams) => {
     setSearchState("loading");
     setErrorMessage("");
 
     try {
-      const result = await OrderTrackingAPI.searchOrder(params);
+      const response = await fetch("/api/orders/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: params.orderId,
+          contactInfo: params.email || params.phone,
+        }),
+      });
 
-      if (result) {
-        setOrderData(result);
+      const result = await response.json();
+
+      if (result.success) {
+        setOrderData(result.data);
         setSearchState("success");
       } else {
         setErrorMessage(
-          "We couldn't find an order with the provided details. Please check your Order ID and contact information."
+          result.error ||
+            "We couldn't find an order with the provided details. Please check your Order ID and contact information."
         );
         setSearchState("error");
       }
@@ -140,13 +128,20 @@ export default function OrderTrackingPage() {
 
     setIsRefreshing(true);
     try {
-      const updatedHistory = await OrderTrackingAPI
-        .refreshTracking
-        // orderData.orderId
-        ();
-      setOrderData((prev) =>
-        prev ? { ...prev, trackingHistory: updatedHistory } : null
-      );
+      const response = await fetch("/api/orders/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: orderData.orderId,
+          contactInfo: orderData.shippingAddress.phone,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setOrderData(result.data);
+      }
     } catch {
       console.error("Failed to refresh tracking");
     } finally {
@@ -214,12 +209,9 @@ export default function OrderTrackingPage() {
         />
       </div>
 
-      {/* ================================================================= */}
-      {/* HERO SECTION */}
-      {/* ================================================================= */}
+      {/* Hero Section */}
       <section className="relative mt-20 py-20 pb-12 px-4">
         <div className="container mx-auto text-center max-w-4xl">
-          {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#DDA200]/10 rounded-full mb-6">
             <Truck className="w-4 h-4 text-[#DDA200]" />
             <span className="text-sm font-semibold text-[#b38600]">
@@ -240,19 +232,21 @@ export default function OrderTrackingPage() {
         </div>
       </section>
 
-      {/* ================================================================= */}
-      {/* SEARCH / RESULTS CONTENT */}
-      {/* ================================================================= */}
+      {/* Main Content */}
       <section className="relative pb-20 px-4">
         <div className="container mx-auto max-w-6xl">
-          {/* Search Form (Show when idle or error) */}
+          {/* Search Form */}
           {(searchState === "idle" || searchState === "error") && (
             <div className="py-8">
-              {searchState === "idle" && (
-                <OrderSearchForm
-                  onSearch={handleSearch}
-                  isLoading={isLoading}
-                />
+              <OrderSearchForm
+                onSearch={handleSearch}
+                isLoading={isLoading}
+                initialOrderId={initialOrderId}
+              />
+              {searchState === "error" && (
+                <div className="mt-6">
+                  <ErrorState message={errorMessage} onRetry={handleReset} />
+                </div>
               )}
             </div>
           )}
@@ -270,7 +264,7 @@ export default function OrderTrackingPage() {
             </div>
           )}
 
-          {/* Order Details (Show when success) */}
+          {/* Order Details */}
           {searchState === "success" && orderData && (
             <div className="space-y-8">
               {/* Back Button */}
@@ -287,56 +281,29 @@ export default function OrderTrackingPage() {
 
               {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Tracking Timeline */}
+                {/* Left Column */}
                 <div className="lg:col-span-2 space-y-8">
                   <TrackingTimeline
                     events={orderData.trackingHistory}
                     isRefreshing={isRefreshing}
                     onRefresh={handleRefreshTracking}
                   />
-
-                  {/* Order Items */}
                   <OrderItemsList items={orderData.items} />
-
-                  {/* Delivery Map */}
-                  <DeliveryMapPlaceholder />
                 </div>
 
-                {/* Right Column - Order Info */}
+                {/* Right Column */}
                 <div className="space-y-6">
-                  {/* Payment Summary */}
                   <PaymentSummary order={orderData} />
-
-                  {/* Shipping Address */}
                   <AddressCard
                     title="Shipping Address"
                     icon={MapPin}
-                    address={orderData.shippingAddress}
+                    address={orderData.shippingAddress ?? emptyAddress}
                   />
-
-                  {/* Expandable Billing Address */}
-                  <ExpandableSection title="Billing Address" icon={CreditCard}>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-stone-400" />
-                        <span className="font-medium text-stone-800">
-                          {orderData.billingAddress.name}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-stone-400 mt-0.5" />
-                        <span className="text-stone-600">
-                          {orderData.billingAddress.street},{" "}
-                          {orderData.billingAddress.city},{" "}
-                          {orderData.billingAddress.state}{" "}
-                          {orderData.billingAddress.postalCode},{" "}
-                          {orderData.billingAddress.country}
-                        </span>
-                      </div>
-                    </div>
-                  </ExpandableSection>
-
-                  {/* Order Protection */}
+                  <AddressCard
+                    title="Billing Address"
+                    icon={CreditCard}
+                    address={orderData.billingAddress ?? emptyAddress}
+                  />
                   <div className="bg-gradient-to-br from-[#FFF9E6] to-[#F7E4B2] rounded-2xl p-6 border border-[#f3e4b7]">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="p-2 bg-[#DDA200]/20 rounded-lg">
@@ -361,9 +328,7 @@ export default function OrderTrackingPage() {
         </div>
       </section>
 
-      {/* ================================================================= */}
-      {/* FEATURES SECTION (Show when idle) */}
-      {/* ================================================================= */}
+      {/* Features Section (Show when idle) */}
       {searchState === "idle" && (
         <section className="relative py-16 px-4 bg-gradient-to-br from-[#FFF9E6] to-[#F7E4B2]">
           <div className="container mx-auto max-w-5xl">
@@ -417,14 +382,11 @@ export default function OrderTrackingPage() {
         </section>
       )}
 
-      {/* ================================================================= */}
-      {/* CTA SECTION (Show when idle) */}
-      {/* ================================================================= */}
+      {/* CTA Section (Show when idle) */}
       {searchState === "idle" && (
         <section className="py-16 px-4">
           <div className="container mx-auto max-w-4xl">
             <div className="relative p-8 md:p-12 bg-gradient-to-r from-[#DDA200] to-[#b38600] rounded-3xl text-white overflow-hidden shadow-2xl shadow-[#DDA200]/30">
-              {/* Decorative Elements */}
               <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <div className="absolute left-0 bottom-0 w-32 h-32 bg-white/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 

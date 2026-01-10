@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Truck,
   Clock,
@@ -10,11 +11,13 @@ import {
   RefreshCw,
   BookmarkCheck,
   MapPin,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import type { CartSummary, PromoCode } from "@/types/cart";
 import { usePromoCode } from "@/hooks/carthooks/usePromoCode";
 import useRecommendations from "@/hooks/carthooks/useRecommendations";
-import { shippingOptions } from "@/lib/cart";
+import { shippingOptions } from "@/lib/dummyData/cart";
 import { transformPromoCode } from "@/utils/cart/UtilityFunctions";
 import { useCart } from "@/hooks/carthooks/useCart";
 import { CartLoadingSkeleton } from "@/components/ui/cart/CartLoadingSkeleton";
@@ -31,7 +34,10 @@ import { OrderSummary } from "@/components/ui/cart/OrderSummary";
 const FREE_SHIPPING_THRESHOLD = 5000;
 
 export default function CartPage() {
+  const router = useRouter();
+
   const {
+    cartId,
     items,
     savedItems,
     summary,
@@ -61,6 +67,7 @@ export default function CartPage() {
     useRecommendations();
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Transform applied promo code for UI
   const appliedPromo: PromoCode | null = useMemo(() => {
@@ -108,15 +115,54 @@ export default function CartPage() {
     await updateShipping(shippingId);
   };
 
+  // Validate cart before checkout
+  const validateCart = async (): Promise<boolean> => {
+    if (!cartId) {
+      setCheckoutError("Cart not found. Please refresh the page.");
+      return false;
+    }
+
+    try {
+      const response = await fetch("/api/checkout/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        if (result.issues && result.issues.length > 0) {
+          setCheckoutError(result.issues.join(". "));
+        } else {
+          setCheckoutError(result.message || "Unable to proceed to checkout");
+        }
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Cart validation error:", error);
+      setCheckoutError("Unable to validate cart. Please try again.");
+      return false;
+    }
+  };
+
   // Handle checkout
   const handleCheckout = async () => {
     setIsCheckingOut(true);
+    setCheckoutError(null);
+
     try {
-      // TODO: Implement actual checkout logic
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      window.location.href = "/checkout";
+      // Validate cart first
+      const isValid = await validateCart();
+
+      if (isValid) {
+        router.push("/home/checkout");
+      }
     } catch (error) {
       console.error("Checkout failed:", error);
+      setCheckoutError("Something went wrong. Please try again.");
     } finally {
       setIsCheckingOut(false);
     }
@@ -171,6 +217,25 @@ export default function CartPage() {
           <ChevronRight className="w-4 h-4 text-stone-400" />
           <span className="text-stone-800 font-medium">Shopping Cart</span>
         </nav>
+
+        {/* Checkout Error Banner */}
+        {checkoutError && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-red-700 font-medium">
+                Unable to proceed to checkout
+              </p>
+              <p className="text-red-600 text-sm mt-1">{checkoutError}</p>
+            </div>
+            <button
+              onClick={() => setCheckoutError(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -250,11 +315,12 @@ export default function CartPage() {
                           <div
                             className="h-full bg-gradient-to-r from-[#DDA200] to-[#b38600] rounded-full transition-all duration-500"
                             style={{
-                              width: `${
+                              width: `${Math.min(
                                 (displaySummary.subtotal /
                                   FREE_SHIPPING_THRESHOLD) *
+                                  100,
                                 100
-                              }%`,
+                              )}%`,
                             }}
                           />
                         </div>
@@ -325,9 +391,8 @@ export default function CartPage() {
                 {/* Continue Shopping */}
                 <div className="flex items-center justify-between py-4">
                   <Link
-                    href="/home/shop/products"
-                    className="flex items-center gap-2 text-[#DDA200] hover:text-[#b38600] 
-                      font-medium transition-colors"
+                    href="/shop"
+                    className="flex items-center gap-2 text-[#DDA200] hover:text-[#b38600] font-medium transition-colors"
                   >
                     <ChevronRight className="w-5 h-5 rotate-180" />
                     Continue Shopping
@@ -349,6 +414,22 @@ export default function CartPage() {
                   selectedShipping={selectedShipping}
                   isCheckingOut={isCheckingOut}
                   onCheckout={handleCheckout}
+                  checkoutButton={
+                    <button
+                      onClick={handleCheckout}
+                      disabled={isCheckingOut || items.length === 0}
+                      className="w-full py-4 bg-gradient-to-r from-[#DDA200] to-[#b38600] text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isCheckingOut ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Validating...
+                        </>
+                      ) : (
+                        "Proceed to Checkout"
+                      )}
+                    </button>
+                  }
                 />
 
                 {/* Delivery Info */}
@@ -357,14 +438,12 @@ export default function CartPage() {
                     <MapPin className="w-5 h-5 text-[#DDA200] mt-0.5" />
                     <div>
                       <p className="font-semibold text-stone-800 text-sm">
-                        Delivering to Islamabad
+                        Delivering to Pakistan
                       </p>
                       <p className="text-xs text-stone-600 mt-0.5">
-                        Estimated delivery: {selectedShipping?.estimatedDays}
+                        Estimated delivery:{" "}
+                        {selectedShipping?.estimatedDays || "3-5 days"}
                       </p>
-                      <button className="text-xs text-[#DDA200] font-medium mt-1 hover:underline">
-                        Change location
-                      </button>
                     </div>
                   </div>
                 </div>

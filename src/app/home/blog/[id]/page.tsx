@@ -1,7 +1,7 @@
 // app/blog/[id]/page.tsx
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { blogPosts } from "@/lib/blog";
+import { blogPosts } from "@/lib/dummyData/blog";
 import BlogDetailClient from "./BlogDetailClient";
 
 // =============================================================================

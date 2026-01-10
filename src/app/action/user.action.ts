@@ -2,9 +2,10 @@
 
 import { auth, signIn, signOut } from "@/auth";
 import prisma from "@/lib/prisma";
+import { AuthError } from "next-auth";
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail } from "@/lib/email/email";
 import crypto from "crypto";
 import { sendMail } from "@/lib/mailer";
 import ejs from "ejs";
@@ -37,7 +38,20 @@ export async function getAllUsers() {
     };
   }
 }
+export async function getServerAuthSession() {
+  try {
+    const session = await auth();
 
+    if (!session?.user?.id) {
+      return null;
+    }
+
+    return session;
+  } catch (error) {
+    console.error("getServerAuthSession error:", error);
+    return null;
+  }
+}
 export async function CreateUser(
   name: string | undefined,
   email: string,
@@ -164,21 +178,38 @@ export async function loginUser(
   rememberMe: boolean
 ) {
   try {
-    await signIn("credentials", {
-      email,
+    const result = await signIn("credentials", {
+      email: email.toLowerCase().trim(),
       password,
-      rememberMe: rememberMe ? "true" : "false",
-      redirect: false,
+      rememberMe: rememberMe.toString(),
+      redirect: false, // ← Important! Handle redirect manually
     });
 
+    if (result?.error) {
+      return { success: false, error: "Invalid email or password" };
+    }
+    revalidatePath("/home");
     return { success: true };
-  } catch (error: Error | unknown) {
-    const message =
-      error instanceof Error ? error.message : "Invalid credentials";
-    return {
-      success: false,
-      message,
-    };
+  } catch (error) {
+    console.error("Login error:", error);
+
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { success: false, error: "Invalid email or password" };
+        case "CallbackRouteError":
+          return { success: false, error: "Invalid email or password" };
+        default:
+          return { success: false, error: "Something went wrong" };
+      }
+    }
+
+    // Re-throw if it's a redirect (Next.js throws for redirects)
+    if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+      throw error;
+    }
+
+    return { success: false, error: "An error occurred during login" };
   }
 }
 

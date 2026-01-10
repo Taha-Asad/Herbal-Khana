@@ -1,7 +1,6 @@
 // actions/products.ts
 "use server";
 
-import { Prisma } from "@/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import type {
   FilterState,
@@ -12,6 +11,7 @@ import type {
   ProductReview,
   CategoryFilter,
 } from "@/types/product";
+import { Prisma } from "@prisma/client";
 
 // =============================================================================
 // TYPES

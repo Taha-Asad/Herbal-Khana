@@ -1,4 +1,4 @@
-import { testimonials } from "@/lib/Testimonials";
+import { testimonials } from "@/lib/dummyData/Testimonials";
 import { getStars } from "@/utils/rating";
 import { Star } from "lucide-react";
 import Image from "next/image";

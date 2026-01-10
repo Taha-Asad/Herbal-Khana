@@ -1,5 +1,5 @@
 import BlogsCard from "@/components/ui/BlogsCard";
-import { blogPosts } from "@/lib/blog";
+import { blogPosts } from "@/lib/dummyData/blog";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import React from "react";

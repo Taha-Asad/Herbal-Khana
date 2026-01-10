@@ -1,6 +1,6 @@
 "use server";
 import path from "path";
-import { sendMail } from "./mailer";
+import { sendMail } from "../mailer";
 import ejs from "ejs";
 export const sendVerificationEmail = async ({
   email,

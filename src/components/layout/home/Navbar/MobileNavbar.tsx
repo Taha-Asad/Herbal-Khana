@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { navlinks } from "@/lib/navlinks";
+import { navlinks } from "@/lib/dummyData/navlinks";
 import {
   ShoppingBag,
   User,

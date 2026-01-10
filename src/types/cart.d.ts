@@ -33,6 +33,7 @@ export interface PromoCodeData {
 }
 
 export interface CartData {
+  cartId: string;
   items: CartItem[];
   savedItems: CartItem[];
   summary: CartSummary;
@@ -61,6 +62,7 @@ export type ServerCartItem = {
 
 interface UICartItem {
   id: string;
+  cartId: string;
   variantId: string;
   productId: string;
   name: string;
@@ -156,6 +158,7 @@ interface OrderSummaryProps {
   selectedShipping: ShippingOption | undefined;
   isCheckingOut: boolean;
   onCheckout: () => void;
+  checkoutButton?: React.ReactNode; // add this
 }
 
 interface RecommendedProductsProps {

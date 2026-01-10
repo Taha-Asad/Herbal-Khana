@@ -11,6 +11,7 @@ import { transformCartItem } from "@/utils/cart/UtilityFunctions";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
 export function useCart() {
+  const [cartId, setCartId] = useState<string | null>(null); // ✅ FIX
   const [items, setItems] = useState<UICartItem[]>([]);
   const [savedItems, setSavedItems] = useState<UICartItem[]>([]);
   const [summary, setSummary] = useState<CartSummary | null>(null);
@@ -27,12 +28,21 @@ export function useCart() {
     setIsLoading(true);
     try {
       const result = await getCartForUI();
+
       if (result.success && result.data) {
         const cartData = result.data;
+        if (!cartData.cartId) {
+          console.error("getCartForUI returned no cartId", cartData);
+        }
+
+        setCartId(cartData.cartId); // ✅ cartId comes from cart, not items
+
         setItems(cartData.items.map((item) => transformCartItem(item, false)));
+
         setSavedItems(
           cartData.savedItems.map((item) => transformCartItem(item, true))
         );
+
         setSummary(cartData.summary);
         setAppliedPromoCode(cartData.appliedPromoCode);
         setSelectedShippingId(cartData.selectedShippingId);
@@ -54,7 +64,6 @@ export function useCart() {
 
       setUpdatingItems((prev) => new Set(prev).add(itemId));
 
-      // Optimistic update
       setItems((prev) =>
         prev.map((item) => (item.id === itemId ? { ...item, quantity } : item))
       );
@@ -63,6 +72,9 @@ export function useCart() {
         const result = await updateCartItem(itemId, quantity);
         if (result.success && result.data) {
           const cartData = result.data;
+
+          setCartId(cartData.cartId); // ✅ keep cartId in sync
+
           setItems(
             cartData.items.map((item) => transformCartItem(item, false))
           );
@@ -71,7 +83,6 @@ export function useCart() {
           );
           setSummary(cartData.summary);
         } else {
-          // Revert on failure
           await loadCart();
         }
       } catch (error) {
@@ -92,7 +103,6 @@ export function useCart() {
     async (itemId: string) => {
       setUpdatingItems((prev) => new Set(prev).add(itemId));
 
-      // Optimistic update
       setItems((prev) => prev.filter((item) => item.id !== itemId));
       setSavedItems((prev) => prev.filter((item) => item.id !== itemId));
 
@@ -100,6 +110,9 @@ export function useCart() {
         const result = await removeCartItem(itemId);
         if (result.success && result.data) {
           const cartData = result.data;
+
+          setCartId(cartData.cartId); // ✅
+
           setItems(
             cartData.items.map((item) => transformCartItem(item, false))
           );
@@ -130,6 +143,9 @@ export function useCart() {
         const result = await toggleSaveForLater(itemId);
         if (result.success && result.data) {
           const cartData = result.data;
+
+          setCartId(cartData.cartId); // ✅
+
           setItems(
             cartData.items.map((item) => transformCartItem(item, false))
           );
@@ -152,51 +168,22 @@ export function useCart() {
     [loadCart]
   );
 
-  const moveToCart = useCallback(
-    async (itemId: string) => {
-      setUpdatingItems((prev) => new Set(prev).add(itemId));
-
-      try {
-        const result = await toggleSaveForLater(itemId);
-        if (result.success && result.data) {
-          const cartData = result.data;
-          setItems(
-            cartData.items.map((item) => transformCartItem(item, false))
-          );
-          setSavedItems(
-            cartData.savedItems.map((item) => transformCartItem(item, true))
-          );
-          setSummary(cartData.summary);
-        }
-      } catch (error) {
-        console.error("Failed to move to cart:", error);
-        await loadCart();
-      } finally {
-        setUpdatingItems((prev) => {
-          const next = new Set(prev);
-          next.delete(itemId);
-          return next;
-        });
-      }
-    },
-    [loadCart]
-  );
+  const moveToCart = saveForLater; // same action, no need to duplicate logic
 
   const handleClearCart = useCallback(async () => {
     try {
       const result = await clearCart();
 
-      if (result.success && "data" in result) {
-        // TypeScript now knows result has `data`
+      if (result.success && result.data) {
         const cartData = result.data;
+
+        setCartId(cartData.cartId); // ✅ still exists, just empty
+
         setItems(cartData.items.map((item) => transformCartItem(item, false)));
         setSavedItems(
           cartData.savedItems.map((item) => transformCartItem(item, true))
         );
         setSummary(cartData.summary);
-      } else {
-        // Optional: handle failure case
-        console.error("Failed to clear cart:", result.message);
       }
     } catch (error) {
       console.error("Failed to clear cart:", error);
@@ -210,6 +197,8 @@ export function useCart() {
       const result = await updateShippingMethod(shippingId);
       if (result.success && result.data) {
         const cartData = result.data;
+
+        setCartId(cartData.cartId); // ✅
         setSummary(cartData.summary);
         setSelectedShippingId(cartData.selectedShippingId);
       }
@@ -219,6 +208,7 @@ export function useCart() {
   }, []);
 
   return {
+    cartId, // ✅ THIS is what you wanted
     items,
     savedItems,
     summary,

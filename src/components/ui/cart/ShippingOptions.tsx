@@ -1,4 +1,4 @@
-import { shippingOptions } from "@/lib/cart";
+import { shippingOptions } from "@/lib/dummyData/cart";
 import type { ShippingOptionsProps } from "@/types/cart";
 import { formatCurrency } from "@/utils/OrderRelated";
 import { Check, Gift, Truck } from "lucide-react";

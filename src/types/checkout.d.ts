@@ -1,63 +1,41 @@
 // types/checkout.ts
 
-import { Decimal } from "@prisma/client/runtime/client";
+export type PaymentMethod = "cod" | "jazzcash" | "easypaisa" | "bank_transfer";
 
-export type PaymentMethod = "COD" | "JAZZCASH" | "EASYPAISA";
+export interface CheckoutAddress {
+  id?: string;
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state?: string;
+  postal: string;
+  country: string;
+  isDefault?: boolean;
+  label?: string;
+}
 
-export interface CartItemWithDetails {
-  id: string;
+export interface CheckoutItem {
+  variantId: string;
+  productId: string;
+  name: string;
+  variantName: string;
+  sku: string;
+  image?: string | null;
+  price: number;
   quantity: number;
-  variant: {
-    id: string;
-    name: string;
-    size: string;
-    sku: string;
-    price: Decimal;
-    stock: number;
-    product: {
-      id: string;
-      name: string;
-      slug: string;
-      images: {
-        url: string;
-        alt: string | null;
-        isPrimary: boolean;
-      }[];
-    };
-  };
+  subtotal: number;
+  stock: number;
 }
 
 export interface ShippingMethodOption {
   id: string;
   name: string;
-  description: string | null;
-  price: Decimal;
-  freeAbove: Decimal | null;
+  description?: string;
+  price: number;
+  freeAbove?: number;
   estimatedDays: string;
-}
-
-export interface AddressOption {
-  id: string;
-  label: string | null;
-  name: string;
-  phone: string;
-  line1: string;
-  line2: string | null;
-  city: string;
-  state: string | null;
-  postal: string;
-  country: string;
-  isDefault: boolean;
-}
-
-export interface CheckoutFormData {
-  shippingAddressId: string;
-  billingAddressId: string;
-  sameAsShipping: boolean;
-  shippingMethodId: string;
-  paymentMethod: PaymentMethod;
-  promoCode?: string;
-  customerNote?: string;
 }
 
 export interface CheckoutSummary {
@@ -67,15 +45,60 @@ export interface CheckoutSummary {
   discount: number;
   promoDiscount: number;
   total: number;
-  currency: string;
+  appliedPromoCode?: string;
 }
 
-export interface PaymentProofData {
-  orderId: string;
+export interface CheckoutState {
+  cartId: string;
+  items: CheckoutItem[];
+  shippingAddress: CheckoutAddress | null;
+  billingAddress: CheckoutAddress | null;
+  sameAsShipping: boolean;
+  shippingMethod: ShippingMethodOption | null;
+  paymentMethod: PaymentMethod | null;
+  summary: CheckoutSummary;
+  customerNote?: string;
+}
+
+export interface CreateOrderInput {
+  cartId: string;
+  shippingAddressId?: string;
+  shippingAddress?: CheckoutAddress;
+  billingAddressId?: string;
+  billingAddress?: CheckoutAddress;
+  sameAsShipping: boolean;
+  shippingMethodId: string;
   paymentMethod: PaymentMethod;
+  promoCode?: string;
+  customerNote?: string;
+}
+
+export interface OrderResponse {
+  success: boolean;
+  orderId?: string;
+  orderNumber?: string;
+  message?: string;
+  paymentInstructions?: PaymentInstructions;
+}
+
+export interface PaymentInstructions {
+  method: PaymentMethod;
+  accountTitle?: string;
+  accountNumber?: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  instructions: string[];
+  expiresAt?: Date;
+}
+
+export interface PaymentProofUpload {
+  orderId: string;
   transactionId?: string;
-  senderNumber?: string;
+  senderName?: string;
+  senderPhone?: string;
   proofImageUrl: string;
+  notes?: string;
 }
 
 export interface OrderConfirmation {
@@ -83,8 +106,16 @@ export interface OrderConfirmation {
   orderNumber: string;
   status: string;
   paymentStatus: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   total: number;
-  estimatedDelivery: string;
+  estimatedDelivery?: string;
+  paymentInstructions?: PaymentInstructions;
   requiresProof: boolean;
+}
+
+// Validation result for checkout
+export interface CheckoutValidationResult {
+  success: boolean;
+  message?: string;
+  issues?: string[];
 }
