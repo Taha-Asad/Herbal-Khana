@@ -22,11 +22,21 @@ interface OrderWithTotal {
   createdAt: Date;
 }
 
+// types/admin.ts
+type OrderStatus =
+  | "PENDING"
+  | "PAID"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "REFUNDED";
+
 interface OrderWithUser {
   id: string;
   orderNumber: string;
   total: Decimal;
-  status: ORDER_STATUS;
+  status: OrderStatus;
   createdAt: Date;
   user: {
     name: string | null;
