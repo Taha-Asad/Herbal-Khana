@@ -10,6 +10,51 @@ import {
   RecentOrderSummary,
   TopProductSummary,
 } from "@/types/admin";
+import { ORDER_STATUS } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/client";
+
+// =============================================================================
+// TYPES
+// =============================================================================
+
+interface OrderWithTotal {
+  total: Decimal;
+  createdAt: Date;
+}
+
+interface OrderWithUser {
+  id: string;
+  orderNumber: string;
+  total: Decimal;
+  status: ORDER_STATUS;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+  _count: {
+    items: number;
+  };
+}
+
+interface ProductWithVariants {
+  id: string;
+  name: string;
+  slug: string;
+  salesCount: number;
+  images: Array<{
+    url: string;
+  }>;
+  productVariants: Array<{
+    price: Decimal;
+    stock: number;
+  }>;
+}
+
+// =============================================================================
+// GET DASHBOARD STATS
+// =============================================================================
 
 export async function getDashboardStats(): Promise<
   ActionResponse<DashboardStats>
@@ -132,6 +177,10 @@ export async function getDashboardStats(): Promise<
   }
 }
 
+// =============================================================================
+// GET REVENUE CHART
+// =============================================================================
+
 export async function getRevenueChart(
   days: number = 30
 ): Promise<ActionResponse<ChartDataPoint[]>> {
@@ -142,7 +191,7 @@ export async function getRevenueChart(
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
 
-    const orders = await prisma.order.findMany({
+    const orders: OrderWithTotal[] = await prisma.order.findMany({
       where: {
         createdAt: { gte: startDate },
         status: { notIn: ["CANCELLED", "REFUNDED"] },
@@ -162,7 +211,7 @@ export async function getRevenueChart(
     }
 
     // Fill in data
-    orders.forEach((order) => {
+    orders.forEach((order: OrderWithTotal) => {
       const key = order.createdAt.toISOString().split("T")[0];
       const existing = dataMap.get(key);
       if (existing) {
@@ -172,7 +221,7 @@ export async function getRevenueChart(
     });
 
     const data: ChartDataPoint[] = Array.from(dataMap.entries()).map(
-      ([date, values]) => ({
+      ([date, values]: [string, { revenue: number; orders: number }]) => ({
         date,
         revenue: values.revenue,
         orders: values.orders,
@@ -186,13 +235,17 @@ export async function getRevenueChart(
   }
 }
 
+// =============================================================================
+// GET RECENT ORDERS
+// =============================================================================
+
 export async function getRecentOrders(
   limit: number = 10
 ): Promise<ActionResponse<RecentOrderSummary[]>> {
   try {
     await requireAdmin();
 
-    const orders = await prisma.order.findMany({
+    const orders: OrderWithUser[] = await prisma.order.findMany({
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
@@ -201,21 +254,25 @@ export async function getRecentOrders(
       },
     });
 
-    return {
-      success: true,
-      data: orders.map((order) => ({
+    const formattedOrders: RecentOrderSummary[] = orders.map(
+      (order: OrderWithUser) => ({
         id: order.id,
         orderNumber: order.orderNumber,
         customer: {
           name: order.user.name || "Unknown",
-          email: order.user.email,
+          email: order.user.email || "",
           avatar: order.user.image || undefined,
         },
         total: Number(order.total),
         status: order.status,
         itemCount: order._count.items,
         createdAt: order.createdAt.toISOString(),
-      })),
+      })
+    );
+
+    return {
+      success: true,
+      data: formattedOrders,
     };
   } catch (error) {
     console.error("getRecentOrders error:", error);
@@ -223,13 +280,17 @@ export async function getRecentOrders(
   }
 }
 
+// =============================================================================
+// GET TOP PRODUCTS
+// =============================================================================
+
 export async function getTopProducts(
   limit: number = 5
 ): Promise<ActionResponse<TopProductSummary[]>> {
   try {
     await requireAdmin();
 
-    const products = await prisma.product.findMany({
+    const products: ProductWithVariants[] = await prisma.product.findMany({
       where: { isActive: true },
       take: limit,
       orderBy: { salesCount: "desc" },
@@ -239,15 +300,19 @@ export async function getTopProducts(
       },
     });
 
-    return {
-      success: true,
-      data: products.map((product) => {
+    const formattedProducts: TopProductSummary[] = products.map(
+      (product: ProductWithVariants) => {
         const minPrice =
           product.productVariants.length > 0
-            ? Math.min(...product.productVariants.map((v) => Number(v.price)))
+            ? Math.min(
+                ...product.productVariants.map(
+                  (v: { price: Decimal; stock: number }) => Number(v.price)
+                )
+              )
             : 0;
+
         const totalStock = product.productVariants.reduce(
-          (sum, v) => sum + v.stock,
+          (sum: number, v: { price: Decimal; stock: number }) => sum + v.stock,
           0
         );
 
@@ -261,10 +326,190 @@ export async function getTopProducts(
           revenue: product.salesCount * minPrice,
           stock: totalStock,
         };
-      }),
+      }
+    );
+
+    return {
+      success: true,
+      data: formattedProducts,
     };
   } catch (error) {
     console.error("getTopProducts error:", error);
     return { success: false, error: "Failed to load top products" };
+  }
+}
+
+// =============================================================================
+// GET ORDER STATUS DISTRIBUTION
+// =============================================================================
+
+interface StatusCount {
+  status: ORDER_STATUS;
+  count: number;
+}
+
+export async function getOrderStatusDistribution(): Promise<
+  ActionResponse<StatusCount[]>
+> {
+  try {
+    await requireAdmin();
+
+    const statusCounts = await prisma.order.groupBy({
+      by: ["status"],
+      _count: { status: true },
+    });
+
+    const data: StatusCount[] = statusCounts.map(
+      (item: { status: ORDER_STATUS; _count: { status: number } }) => ({
+        status: item.status,
+        count: item._count.status,
+      })
+    );
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("getOrderStatusDistribution error:", error);
+    return { success: false, error: "Failed to load order status data" };
+  }
+}
+
+// =============================================================================
+// GET LOW STOCK PRODUCTS
+// =============================================================================
+
+interface LowStockProduct {
+  id: string;
+  name: string;
+  variantName: string;
+  sku: string;
+  stock: number;
+  lowStockThreshold: number;
+}
+
+export async function getLowStockProducts(
+  limit: number = 10
+): Promise<ActionResponse<LowStockProduct[]>> {
+  try {
+    await requireAdmin();
+
+    const variants = await prisma.productVariant.findMany({
+      where: {
+        stock: { lte: 10 },
+        product: { isActive: true },
+      },
+      take: limit,
+      orderBy: { stock: "asc" },
+      include: {
+        product: { select: { id: true, name: true } },
+      },
+    });
+
+    const data: LowStockProduct[] = variants.map(
+      (variant: {
+        id: string;
+        name: string;
+        sku: string;
+        stock: number;
+        lowStockThreshold: number;
+        product: { id: string; name: string };
+      }) => ({
+        id: variant.id,
+        name: variant.product.name,
+        variantName: variant.name,
+        sku: variant.sku,
+        stock: variant.stock,
+        lowStockThreshold: variant.lowStockThreshold,
+      })
+    );
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("getLowStockProducts error:", error);
+    return { success: false, error: "Failed to load low stock products" };
+  }
+}
+
+// =============================================================================
+// GET SALES BY CATEGORY
+// =============================================================================
+
+interface CategorySales {
+  categoryId: string;
+  categoryName: string;
+  totalSales: number;
+  totalRevenue: number;
+}
+
+export async function getSalesByCategory(): Promise<
+  ActionResponse<CategorySales[]>
+> {
+  try {
+    await requireAdmin();
+
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      include: {
+        products: {
+          where: { isActive: true },
+          select: {
+            salesCount: true,
+            productVariants: {
+              select: { price: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    const data: CategorySales[] = categories.map(
+      (category: {
+        id: string;
+        name: string;
+        products: Array<{
+          salesCount: number;
+          productVariants: Array<{ price: Decimal }>;
+        }>;
+      }) => {
+        const totalSales = category.products.reduce(
+          (sum: number, p: { salesCount: number }) => sum + p.salesCount,
+          0
+        );
+
+        const totalRevenue = category.products.reduce(
+          (
+            sum: number,
+            p: {
+              salesCount: number;
+              productVariants: Array<{ price: Decimal }>;
+            }
+          ) => {
+            const price =
+              p.productVariants.length > 0
+                ? Number(p.productVariants[0].price)
+                : 0;
+            return sum + p.salesCount * price;
+          },
+          0
+        );
+
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          totalSales,
+          totalRevenue,
+        };
+      }
+    );
+
+    // Sort by total sales descending
+    data.sort(
+      (a: CategorySales, b: CategorySales) => b.totalSales - a.totalSales
+    );
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("getSalesByCategory error:", error);
+    return { success: false, error: "Failed to load sales by category" };
   }
 }
