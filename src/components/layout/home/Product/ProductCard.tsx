@@ -252,7 +252,7 @@ export default function ProductCard({
     >
       {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-[#FFF9E6] to-stone-100">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/home/shop/products/${product.slug}`}>
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 animate-pulse" />
           )}
@@ -339,7 +339,7 @@ export default function ProductCard({
               )}
             </button>
             <Link
-              href={`/products/${product.slug}`}
+              href={`/home/shop/products/${product.slug}`}
               className="p-3 bg-white/90 rounded-xl text-stone-700 hover:bg-white 
                 hover:text-[#DDA200] transition-colors"
             >
@@ -351,7 +351,7 @@ export default function ProductCard({
 
       {/* Content */}
       <div className="p-4">
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/home/shop/products/${product.slug}`}>
           <p className="text-xs text-[#DDA200] font-medium uppercase tracking-wide mb-1">
             {product.category}
           </p>
