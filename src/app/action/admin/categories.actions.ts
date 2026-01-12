@@ -8,6 +8,44 @@ import { requireAdmin } from "@/lib/auth/admin-auth";
 import { uploadImageFromFile } from "./products.actions";
 
 // ============================================================================
+// TYPES
+// ============================================================================
+
+// Define the shape of category with product count from Prisma
+interface CategoryWithCount {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+  _count: {
+    products: number;
+  };
+}
+
+// ============================================================================
+// HELPER FUNCTION
+// ============================================================================
+
+function formatCategory(cat: CategoryWithCount): Category {
+  return {
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    description: cat.description ?? undefined,
+    image: cat.image ?? null,
+    isActive: cat.isActive,
+    sortOrder: cat.sortOrder,
+    productCount: cat._count.products,
+    createdAt: cat.createdAt.toISOString(),
+  };
+}
+
+// ============================================================================
 // GET ALL CATEGORIES
 // ============================================================================
 
@@ -24,17 +62,9 @@ export async function getCategories(): Promise<ActionResponse<Category[]>> {
       },
     });
 
-    const formattedCategories: Category[] = categories.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      slug: cat.slug,
-      description: cat.description ?? undefined,
-      image: cat.image ?? null,
-      isActive: cat.isActive,
-      sortOrder: cat.sortOrder,
-      productCount: cat._count.products,
-      createdAt: cat.createdAt.toISOString(),
-    }));
+    const formattedCategories = categories.map(
+      (cat: CategoryWithCount): Category => formatCategory(cat)
+    );
 
     return {
       success: true,
@@ -71,17 +101,7 @@ export async function getCategory(
 
     return {
       success: true,
-      data: {
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        description: category.description ?? undefined,
-        image: category.image ?? null,
-        isActive: category.isActive,
-        sortOrder: category.sortOrder,
-        productCount: category._count.products,
-        createdAt: category.createdAt.toISOString(),
-      },
+      data: formatCategory(category as CategoryWithCount),
     };
   } catch (error) {
     console.error("getCategory error:", error);
@@ -142,6 +162,15 @@ export async function createCategory(
 // UPDATE CATEGORY
 // ============================================================================
 
+interface UpdateCategoryData {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  image?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
 export async function updateCategory(
   id: string,
   data: Partial<CategoryFormData>
@@ -178,28 +207,30 @@ export async function updateCategory(
     if (data.image instanceof File) {
       imageUrl = await uploadImageFromFile(data.image);
     } else if (data.image === null) {
-      // Explicitly removing image
       imageUrl = null;
     }
-    // If data.image is undefined, we don't change the image
 
     // Build update data
-    const updateData: {
-      name?: string;
-      slug?: string;
-      description?: string | null;
-      image?: string | null;
-      isActive?: boolean;
-      sortOrder?: number;
-    } = {};
+    const updateData: UpdateCategoryData = {};
 
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.slug !== undefined) updateData.slug = data.slug;
-    if (data.description !== undefined)
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+    if (data.slug !== undefined) {
+      updateData.slug = data.slug;
+    }
+    if (data.description !== undefined) {
       updateData.description = data.description ?? null;
-    if (imageUrl !== undefined) updateData.image = imageUrl;
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+    }
+    if (imageUrl !== undefined) {
+      updateData.image = imageUrl;
+    }
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive;
+    }
+    if (data.sortOrder !== undefined) {
+      updateData.sortOrder = data.sortOrder;
+    }
 
     await prisma.category.update({
       where: { id },
@@ -224,7 +255,6 @@ export async function deleteCategory(id: string): Promise<ActionResponse> {
   try {
     await requireAdmin();
 
-    // Check if category exists and has products
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
@@ -238,14 +268,13 @@ export async function deleteCategory(id: string): Promise<ActionResponse> {
       return { success: false, error: "Category not found" };
     }
 
-    if (category._count.products > 0) {
+    const productCount = category._count.products;
+
+    if (productCount > 0) {
+      const productText = productCount === 1 ? "product" : "products";
       return {
         success: false,
-        error: `Cannot delete category with ${
-          category._count.products
-        } product${
-          category._count.products === 1 ? "" : "s"
-        }. Please reassign or delete products first.`,
+        error: `Cannot delete category with ${productCount} ${productText}. Please reassign or delete products first.`,
       };
     }
 
@@ -270,7 +299,6 @@ export async function reorderCategories(
   try {
     await requireAdmin();
 
-    // Validate all IDs exist
     const existingCategories = await prisma.category.findMany({
       where: { id: { in: orderedIds } },
       select: { id: true },
@@ -280,15 +308,14 @@ export async function reorderCategories(
       return { success: false, error: "Some categories not found" };
     }
 
-    // Update sort order in transaction
-    await prisma.$transaction(
-      orderedIds.map((id, index) =>
-        prisma.category.update({
-          where: { id },
-          data: { sortOrder: index },
-        })
-      )
+    const updateOperations = orderedIds.map((categoryId, index) =>
+      prisma.category.update({
+        where: { id: categoryId },
+        data: { sortOrder: index },
+      })
     );
+
+    await prisma.$transaction(updateOperations);
 
     revalidatePath("/admin/categories");
 
@@ -318,18 +345,19 @@ export async function toggleCategoryStatus(
       return { success: false, error: "Category not found" };
     }
 
+    const newStatus = !category.isActive;
+
     await prisma.category.update({
       where: { id },
-      data: { isActive: !category.isActive },
+      data: { isActive: newStatus },
     });
 
     revalidatePath("/admin/categories");
 
+    const statusText = newStatus ? "activated" : "deactivated";
     return {
       success: true,
-      message: `Category ${
-        category.isActive ? "deactivated" : "activated"
-      } successfully`,
+      message: `Category ${statusText} successfully`,
     };
   } catch (error) {
     console.error("toggleCategoryStatus error:", error);
@@ -368,5 +396,33 @@ export async function getCategoryOptions(): Promise<
   } catch (error) {
     console.error("getCategoryOptions error:", error);
     return { success: false, error: "Failed to load category options" };
+  }
+}
+
+// ============================================================================
+// GET CATEGORIES FOR PUBLIC (No admin required)
+// ============================================================================
+
+export async function getPublicCategories(): Promise<
+  ActionResponse<CategoryOption[]>
+> {
+  try {
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    });
+
+    return {
+      success: true,
+      data: categories,
+    };
+  } catch (error) {
+    console.error("getPublicCategories error:", error);
+    return { success: false, error: "Failed to load categories" };
   }
 }
