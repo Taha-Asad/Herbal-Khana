@@ -179,7 +179,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
-  image?: string;
+  image: string | null; // ✅ URL from DB
   isActive: boolean;
   sortOrder: number;
   productCount: number;
@@ -190,7 +190,7 @@ export interface CategoryFormData {
   name: string;
   slug: string;
   description?: string;
-  image?: string;
+  image?: File | null;
   isActive: boolean;
   sortOrder: number;
 }

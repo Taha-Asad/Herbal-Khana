@@ -1,8 +1,8 @@
-// components/admin/forms/CategoryForm.tsx
 "use client";
 
 import React, { useState } from "react";
-import { Save, ImagePlus, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Save, ImagePlus, Loader2, X } from "lucide-react";
 import { CategoryFormData } from "@/types/admin";
 
 interface CategoryFormProps {
@@ -16,7 +16,7 @@ const defaultFormData: CategoryFormData = {
   name: "",
   slug: "",
   description: "",
-  image: "",
+  image: null,
   isActive: true,
   sortOrder: 0,
 };
@@ -28,16 +28,21 @@ export default function CategoryForm({
   isLoading = false,
 }: CategoryFormProps) {
   const [formData, setFormData] = useState<CategoryFormData>(
-    initialData || defaultFormData
+    initialData ?? defaultFormData
   );
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const generateSlug = (name: string): string => {
-    return name
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<string | null>(
+    initialData && typeof initialData.image === "string"
+      ? initialData.image
+      : null
+  );
+
+  const generateSlug = (name: string): string =>
+    name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -51,7 +56,7 @@ export default function CategoryForm({
         type === "checkbox"
           ? checked
           : type === "number"
-          ? parseInt(value) || 0
+          ? Number(value) || 0
           : value,
     }));
 
@@ -64,11 +69,31 @@ export default function CategoryForm({
 
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
       });
     }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+
+    setFormData((prev) => ({
+      ...prev,
+      image: file,
+    }));
+
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, image: null }));
+    setPreview(null);
   };
 
   const validate = (): boolean => {
@@ -89,9 +114,10 @@ export default function CategoryForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Name + Slug */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium mb-2">
             Category Name *
           </label>
           <input
@@ -99,125 +125,118 @@ export default function CategoryForm({
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-amber-500 
-              focus:border-transparent transition-all
-              ${errors.name ? "border-red-500" : "border-gray-200"}`}
-            placeholder="Enter category name"
+            className={`w-full px-4 py-2.5 rounded-xl border ${
+              errors.name ? "border-red-500" : "border-gray-200"
+            }`}
           />
           {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+            <p className="text-sm text-red-600 mt-1">{errors.name}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Slug *
-          </label>
+          <label className="block text-sm font-medium mb-2">Slug *</label>
           <input
             type="text"
             name="slug"
             value={formData.slug}
             onChange={handleChange}
-            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-amber-500 
-              focus:border-transparent transition-all
-              ${errors.slug ? "border-red-500" : "border-gray-200"}`}
-            placeholder="category-slug"
+            className={`w-full px-4 py-2.5 rounded-xl border ${
+              errors.slug ? "border-red-500" : "border-gray-200"
+            }`}
           />
           {errors.slug && (
-            <p className="mt-1 text-sm text-red-600">{errors.slug}</p>
+            <p className="text-sm text-red-600 mt-1">{errors.slug}</p>
           )}
         </div>
       </div>
 
+      {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Description
-        </label>
+        <label className="block text-sm font-medium mb-2">Description</label>
         <textarea
           name="description"
           value={formData.description || ""}
           onChange={handleChange}
           rows={3}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
-            focus:ring-amber-500 focus:border-transparent transition-all resize-none"
-          placeholder="Category description"
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl resize-none"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Image URL
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              name="image"
-              value={formData.image || ""}
-              onChange={handleChange}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
-                focus:ring-amber-500 focus:border-transparent transition-all"
-              placeholder="https://example.com/image.jpg"
-            />
+      {/* Image Upload */}
+      <div>
+        <label className="block text-sm font-medium mb-2">Category Image</label>
+
+        {preview ? (
+          <div className="relative w-32 h-32 rounded-xl overflow-hidden border">
+            <Image src={preview} alt="Preview" fill className="object-cover" />
             <button
               type="button"
-              className="p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              onClick={removeImage}
+              className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
             >
-              <ImagePlus className="w-5 h-5 text-gray-500" />
+              <X className="w-4 h-4 text-red-600" />
             </button>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Sort Order
+        ) : (
+          <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border-dashed rounded-xl hover:bg-gray-50">
+            <ImagePlus className="w-5 h-5 text-gray-500" />
+            <span className="text-sm text-gray-600">Upload image</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
           </label>
+        )}
+      </div>
+
+      {/* Sort + Active */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Sort Order</label>
           <input
             type="number"
             name="sortOrder"
             value={formData.sortOrder}
             onChange={handleChange}
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
-              focus:ring-amber-500 focus:border-transparent transition-all"
-            min="0"
+            min={0}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl"
           />
         </div>
-      </div>
 
-      <div>
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-2 mt-8">
           <input
             type="checkbox"
             name="isActive"
             checked={formData.isActive}
             onChange={handleChange}
-            className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
           />
-          <span className="text-sm text-gray-700">Active</span>
+          <span className="text-sm">Active</span>
         </label>
       </div>
 
-      <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
+      {/* Actions */}
+      <div className="flex justify-end gap-4 pt-4 border-t">
         <button
           type="button"
           onClick={onCancel}
           disabled={isLoading}
-          className="px-6 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 
-            font-medium rounded-xl transition-colors disabled:opacity-50"
+          className="px-6 py-2.5 bg-gray-100 rounded-xl"
         >
           Cancel
         </button>
+
         <button
           type="submit"
           disabled={isLoading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 
-            text-white font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 
-            transition-all disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-2.5 bg-amber-600 text-white rounded-xl"
         >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Saving...
+              Saving…
             </>
           ) : (
             <>

@@ -5,6 +5,16 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { ActionResponse, Category, CategoryFormData } from "@/types/admin";
 import { requireAdmin } from "@/lib/auth/admin-auth";
+import { Prisma } from "@prisma/client";
+import { uploadImageFromFile } from "./products.actions";
+
+type CategoryWithCount = Prisma.CategoryGetPayload<{
+  include: {
+    _count: {
+      select: { products: true };
+    };
+  };
+}>;
 
 export async function getCategories(): Promise<ActionResponse<Category[]>> {
   try {
@@ -17,12 +27,12 @@ export async function getCategories(): Promise<ActionResponse<Category[]>> {
 
     return {
       success: true,
-      data: categories.map((cat) => ({
+      data: categories.map((cat: CategoryWithCount) => ({
         id: cat.id,
         name: cat.name,
         slug: cat.slug,
         description: cat.description || undefined,
-        image: cat.image || undefined,
+        image: cat.image || null,
         isActive: cat.isActive,
         sortOrder: cat.sortOrder,
         productCount: cat._count.products,
@@ -57,7 +67,7 @@ export async function getCategory(
         name: category.name,
         slug: category.slug,
         description: category.description || undefined,
-        image: category.image || undefined,
+        image: category.image || null,
         isActive: category.isActive,
         sortOrder: category.sortOrder,
         productCount: category._count.products,
@@ -85,12 +95,14 @@ export async function createCategory(
       return { success: false, error: "Slug already exists" };
     }
 
+    const imageUrl = await uploadImageFromFile(data.image);
+
     const category = await prisma.category.create({
       data: {
         name: data.name,
         slug: data.slug,
         description: data.description,
-        image: data.image,
+        image: imageUrl,
         isActive: data.isActive,
         sortOrder: data.sortOrder,
       },
@@ -124,10 +136,24 @@ export async function updateCategory(
         return { success: false, error: "Slug already exists" };
       }
     }
+    let imageUrl: string | null | undefined = undefined;
+
+    if (data.image instanceof File) {
+      imageUrl = await uploadImageFromFile(data.image);
+    } else if (data.image === null) {
+      imageUrl = null;
+    }
 
     await prisma.category.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        image: imageUrl,
+        isActive: data.isActive,
+        sortOrder: data.sortOrder,
+      },
     });
 
     revalidatePath("/admin/categories");

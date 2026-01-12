@@ -24,6 +24,14 @@ import EmptyState from "@/components/admin/ui/EmptyState";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 import toast from "react-hot-toast";
 import CategoryForm from "@/components/admin/forms/CategoryForm";
+const mapCategoryToFormData = (category: Category): CategoryFormData => ({
+  name: category.name,
+  slug: category.slug,
+  description: category.description,
+  image: null, // IMPORTANT: Files cannot come from DB
+  isActive: category.isActive,
+  sortOrder: category.sortOrder,
+});
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -235,7 +243,11 @@ export default function CategoriesPage() {
               {editingCategory ? "Edit Category" : "Create Category"}
             </h2>
             <CategoryForm
-              initialData={editingCategory || undefined}
+              initialData={
+                editingCategory
+                  ? mapCategoryToFormData(editingCategory)
+                  : undefined
+              }
               onSubmit={editingCategory ? handleUpdate : handleCreate}
               onCancel={() => {
                 setShowForm(false);
