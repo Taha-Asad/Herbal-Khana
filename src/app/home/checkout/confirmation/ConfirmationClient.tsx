@@ -155,6 +155,8 @@ export default function ConfirmationClient({
                       {paymentConfig?.name}
                       {paymentConfig?.logo && (
                         <Image
+                          width={500}
+                          height={500}
                           src={paymentConfig.logo}
                           alt={paymentConfig.name}
                           className="h-6"

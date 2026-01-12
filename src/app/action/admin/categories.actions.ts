@@ -5,16 +5,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { ActionResponse, Category, CategoryFormData } from "@/types/admin";
 import { requireAdmin } from "@/lib/auth/admin-auth";
-import { Prisma } from "@prisma/client";
 import { uploadImageFromFile } from "./products.actions";
-
-type CategoryWithCount = Prisma.CategoryGetPayload<{
-  include: {
-    _count: {
-      select: { products: true };
-    };
-  };
-}>;
 
 export async function getCategories(): Promise<ActionResponse<Category[]>> {
   try {
@@ -27,7 +18,7 @@ export async function getCategories(): Promise<ActionResponse<Category[]>> {
 
     return {
       success: true,
-      data: categories.map((cat: CategoryWithCount) => ({
+      data: categories.map((cat) => ({
         id: cat.id,
         name: cat.name,
         slug: cat.slug,

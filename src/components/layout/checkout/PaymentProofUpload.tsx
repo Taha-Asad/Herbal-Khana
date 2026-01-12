@@ -1,15 +1,14 @@
-// components/checkout/PaymentProofUpload.tsx
 "use client";
 
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Loader2, Check, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import { uploadPaymentProof } from "@/app/action/home/payment.action";
+import { uploadPaymentProofWithImage } from "@/app/action/home/payment.action";
 
 interface PaymentProofUploadProps {
   orderId: string;
-  orderNumber: string;
+  orderNumber?: string;
   onSuccess: () => void;
 }
 
@@ -69,53 +68,43 @@ export default function PaymentProofUpload({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!file) {
       setError("Please upload a payment screenshot");
       return;
     }
+    if (!formData.senderName.trim()) {
+      setError("Sender name is required");
+      return;
+    }
+    if (!formData.senderPhone.trim()) {
+      setError("Sender phone is required");
+      return;
+    }
 
     setIsUploading(true);
-    setError(null);
 
     try {
-      // First, upload the image
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-      uploadFormData.append("type", "payment-proof");
+      // Create FormData for the Server Action
+      const serverFormData = new FormData();
+      serverFormData.append("orderId", orderId);
+      serverFormData.append("senderName", formData.senderName);
+      serverFormData.append("senderPhone", formData.senderPhone);
+      serverFormData.append("transactionId", formData.transactionId);
+      serverFormData.append("notes", formData.notes);
+      serverFormData.append("proofImage", file);
 
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-      });
+      // Call Server Action directly
+      const result = await uploadPaymentProofWithImage(serverFormData);
 
-      const uploadResult = await uploadResponse.json();
-
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.message || "Failed to upload image");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to upload payment proof");
       }
 
-      // Then, submit the payment proof
-      const result = await uploadPaymentProof({
-        orderId,
-        transactionId: formData.transactionId,
-        senderName: formData.senderName,
-        senderPhone: formData.senderPhone,
-        proofImageUrl: uploadResult.url,
-        notes: formData.notes,
-      });
-
-      if (result.success) {
-        onSuccess();
-      } else {
-        throw new Error(result.message || "Failed to submit payment proof");
-      }
+      onSuccess();
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.";
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setIsUploading(false);
     }
@@ -154,6 +143,8 @@ export default function PaymentProofUpload({
             <Image
               src={preview}
               alt="Payment proof preview"
+              width={80}
+              height={80}
               className="w-full max-h-64 object-contain bg-stone-100"
             />
             <button
@@ -192,7 +183,7 @@ export default function PaymentProofUpload({
             htmlFor="senderPhone"
             className="block text-sm font-medium text-stone-700 mb-1"
           >
-            Sender&apos;s Phone Number (Optional)
+            Sender&apos;s Phone Number *
           </label>
           <input
             type="tel"
@@ -211,7 +202,7 @@ export default function PaymentProofUpload({
           htmlFor="senderName"
           className="block text-sm font-medium text-stone-700 mb-1"
         >
-          Sender&apos;s Name (Optional)
+          Sender&apos;s Name *
         </label>
         <input
           type="text"
