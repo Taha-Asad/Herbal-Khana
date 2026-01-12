@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { Prisma, ROLE } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { requireAdmin } from "@/lib/auth/admin-auth";
 import {
   ActionResponse,
@@ -12,6 +12,8 @@ import {
   User,
   UserListItem,
 } from "@/types/admin";
+
+type Role = "USER" | "ADMIN";
 
 export async function getUsers(
   filters: QueryFilters = {}
@@ -147,7 +149,7 @@ export async function getUser(id: string): Promise<ActionResponse<User>> {
 
 export async function updateUserRole(
   id: string,
-  role: ROLE
+  role: Role
 ): Promise<ActionResponse> {
   try {
     await requireAdmin();

@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { ORDER_STATUS, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   ActionResponse,
   PaginatedData,
@@ -11,6 +11,7 @@ import {
   Order,
   OrderListItem,
   UpdateOrderData,
+  OrderStatus,
 } from "@/types/admin";
 import { requireAdmin } from "@/lib/auth/admin-auth";
 import { StoredAddress } from "@/types/order";
@@ -65,7 +66,7 @@ export async function getOrders(
     }
 
     if (status) {
-      where.status = status as ORDER_STATUS;
+      where.status = status as OrderStatus;
     }
 
     if (dateFrom || dateTo) {
@@ -285,8 +286,8 @@ export async function updateOrder(
   }
 }
 
-function getDefaultStatusMessage(status: ORDER_STATUS): string {
-  const messages: Record<ORDER_STATUS, string> = {
+function getDefaultStatusMessage(status: OrderStatus): string {
+  const messages: Record<OrderStatus, string> = {
     PENDING: "Order is pending",
     PAID: "Payment confirmed",
     PROCESSING: "Order is being processed",

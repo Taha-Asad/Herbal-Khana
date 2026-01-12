@@ -9,6 +9,7 @@ import {
   ChartDataPoint,
   RecentOrderSummary,
   TopProductSummary,
+  OrderStatus,
 } from "@/types/admin";
 import { Decimal } from "@prisma/client/runtime/client";
 
@@ -22,14 +23,6 @@ interface OrderWithTotal {
 }
 
 // types/admin.ts
-type OrderStatus =
-  | "PENDING"
-  | "PAID"
-  | "PROCESSING"
-  | "SHIPPED"
-  | "DELIVERED"
-  | "CANCELLED"
-  | "REFUNDED";
 
 interface OrderWithUser {
   id: string;

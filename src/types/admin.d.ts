@@ -198,7 +198,14 @@ export interface CategoryFormData {
 // ============================================================================
 // Order Types
 // ============================================================================
-
+type OrderStatus =
+  | "PENDING"
+  | "PAID"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "REFUNDED";
 export interface OrderItem {
   id: string;
   productId?: string;
