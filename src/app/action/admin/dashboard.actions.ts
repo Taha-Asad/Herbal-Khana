@@ -10,7 +10,6 @@ import {
   RecentOrderSummary,
   TopProductSummary,
 } from "@/types/admin";
-import { ORDER_STATUS } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/client";
 
 // =============================================================================
@@ -354,7 +353,7 @@ export async function getTopProducts(
 // =============================================================================
 
 interface StatusCount {
-  status: ORDER_STATUS;
+  status: OrderStatus;
   count: number;
 }
 
@@ -370,7 +369,7 @@ export async function getOrderStatusDistribution(): Promise<
     });
 
     const data: StatusCount[] = statusCounts.map(
-      (item: { status: ORDER_STATUS; _count: { status: number } }) => ({
+      (item: { status: OrderStatus; _count: { status: number } }) => ({
         status: item.status,
         count: item._count.status,
       })
