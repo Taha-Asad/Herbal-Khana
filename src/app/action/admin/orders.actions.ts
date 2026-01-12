@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { Prisma, ORDER_STATUS, PAYMENT_STATUS } from "@prisma/client";
+import { Prisma, PAYMENT_STATUS } from "@prisma/client";
 import {
   ActionResponse,
   PaginatedData,
@@ -11,6 +11,7 @@ import {
   Order,
   OrderListItem,
   UpdateOrderData,
+  OrderStatus,
 } from "@/types/admin";
 import { requireAdmin } from "@/lib/auth/admin-auth";
 import { StoredAddress } from "@/types/order";
@@ -25,7 +26,7 @@ import { StoredAddress } from "@/types/order";
 interface OrderWithRelations {
   id: string;
   orderNumber: string;
-  status: ORDER_STATUS;
+  status: OrderStatus;
   paymentStatus: PAYMENT_STATUS;
   paymentMethod: string | null;
   subtotal: number | { toNumber(): number };
@@ -63,7 +64,7 @@ interface OrderWithRelations {
   }>;
   timeline: Array<{
     id: string;
-    status: ORDER_STATUS;
+    status: OrderStatus;
     message: string | null;
     createdBy: string | null;
     createdAt: Date;
@@ -73,7 +74,7 @@ interface OrderWithRelations {
 interface OrderListItemWithRelations {
   id: string;
   orderNumber: string;
-  status: ORDER_STATUS;
+  status: OrderStatus;
   paymentStatus: PAYMENT_STATUS;
   total: number | { toNumber(): number };
   createdAt: Date;
@@ -116,8 +117,8 @@ function parseAddress(address: unknown): StoredAddress | undefined {
 }
 
 // Helper to get default status message
-function getDefaultStatusMessage(status: ORDER_STATUS): string {
-  const messages: Record<ORDER_STATUS, string> = {
+function getDefaultStatusMessage(status: OrderStatus): string {
+  const messages: Record<OrderStatus, string> = {
     PENDING: "Order is pending",
     PAID: "Payment confirmed",
     PROCESSING: "Order is being processed",
@@ -170,7 +171,7 @@ export async function getOrders(
     }
 
     if (status) {
-      where.status = status as ORDER_STATUS;
+      where.status = status as OrderStatus;
     }
 
     if (dateFrom || dateTo) {
@@ -501,7 +502,7 @@ export async function getOrderStats(): Promise<ActionResponse<OrderStats>> {
 
 interface BulkUpdateData {
   orderIds: string[];
-  status?: ORDER_STATUS;
+  status?: OrderStatus;
   trackingNumber?: string;
 }
 
@@ -584,7 +585,7 @@ export async function bulkUpdateOrders(
 // ============================================================================
 
 interface ExportFilters {
-  status?: ORDER_STATUS;
+  status?: OrderStatus;
   dateFrom?: string;
   dateTo?: string;
 }
