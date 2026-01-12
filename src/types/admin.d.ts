@@ -206,6 +206,8 @@ type OrderStatus =
   | "DELIVERED"
   | "CANCELLED"
   | "REFUNDED";
+
+type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED" | "REFUNDED";
 export interface OrderItem {
   id: string;
   productId?: string;

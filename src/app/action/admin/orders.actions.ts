@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { Prisma, PAYMENT_STATUS } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   ActionResponse,
   PaginatedData,
@@ -12,6 +12,7 @@ import {
   OrderListItem,
   UpdateOrderData,
   OrderStatus,
+  PaymentStatus,
 } from "@/types/admin";
 import { requireAdmin } from "@/lib/auth/admin-auth";
 import { StoredAddress } from "@/types/order";
@@ -27,7 +28,7 @@ interface OrderWithRelations {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentStatus: PAYMENT_STATUS;
+  paymentStatus: PaymentStatus;
   paymentMethod: string | null;
   subtotal: number | { toNumber(): number };
   shippingCost: number | { toNumber(): number };
@@ -75,7 +76,7 @@ interface OrderListItemWithRelations {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentStatus: PAYMENT_STATUS;
+  paymentStatus: PaymentStatus;
   total: number | { toNumber(): number };
   createdAt: Date;
   user: {
