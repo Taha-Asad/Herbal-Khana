@@ -29,8 +29,8 @@ import {
   saveAddress,
   validatePromoCode,
   removePromoCodeFromCart,
-} from "@/app/action/checkout.actions";
-import { createOrder } from "@/app/action/orders.action";
+} from "@/app/action/home/checkout.actions";
+import { createOrder } from "@/app/action/home/orders.action";
 import AddressSelector from "@/components/layout/checkout/AddressSelector";
 import AddressForm from "@/components/layout/checkout/AddressForm";
 import ShippingMethodSelector from "@/components/layout/checkout/ShippingMethodSelector";
@@ -338,9 +338,9 @@ export default function CheckoutClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-[#FFF8E1]/30 to-white">
+    <div className="min-h-screen pt-40 pb-10 bg-gradient-to-br from-white via-[#FFF8E1]/30 to-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-stone-200">
+      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-stone-200">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link

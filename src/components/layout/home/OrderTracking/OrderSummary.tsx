@@ -4,7 +4,6 @@ import { OrderSummaryProps } from "@/types/order";
 import { formatDate } from "@/utils/FormatDate";
 import {
   Calendar,
-  CheckCircle,
   Clock,
   Copy,
   ExternalLink,
@@ -14,13 +13,17 @@ import {
 import StatusBadge from "./StatusBadge";
 
 export default function OrderSummary({ order }: OrderSummaryProps) {
-  const [copied, copy] = useCopyToClipboard();
+  const { copy } = useCopyToClipboard();
   const [ref, isVisible] = useIntersectionObserver();
 
   // Some orders might have no carrier info; fallback to "N/A"
   const carrierName = (order.shippingMethod?.name as string) || "N/A";
   const carrierUrl = (order.shippingMethod?.name as string) || null;
-
+  const copyOrderId = () => {
+    if (order) {
+      copy(order.orderId);
+    }
+  };
   return (
     <div
       ref={ref}
@@ -37,15 +40,11 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{order.orderId}</h2>
               <button
-                onClick={() => copy(order.orderId)}
+                onClick={copyOrderId}
                 className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
                 title="Copy Order ID"
               >
-                {copied ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <Copy className="w-5 h-5" />
-                )}
+                <Copy className="w-5 h-5" />
               </button>
             </div>
           </div>

@@ -9,7 +9,13 @@ import {
   OrderConfirmation,
   PaymentMethod,
 } from "@/types/checkout";
-import { PAYMENT_ACCOUNTS } from "@/lib/payment-config";
+import {
+  getPaymentAccount,
+  isCodAccount,
+  isMobileWalletAccount,
+  PAYMENT_ACCOUNTS,
+  PaymentMethodKey,
+} from "@/lib/payment-config";
 
 import { nanoid } from "nanoid";
 import prisma from "@/lib/prisma";
@@ -174,8 +180,13 @@ export async function createOrder(
     }
 
     // Add COD fee if applicable
-    if (input.paymentMethod === "cod" && PAYMENT_ACCOUNTS.cod.additionalFee) {
+    if (input.paymentMethod === "cod" && isCodAccount(PAYMENT_ACCOUNTS.cod)) {
       shippingCost += PAYMENT_ACCOUNTS.cod.additionalFee;
+    }
+
+    const paymentAccount = getPaymentAccount(input.paymentMethod);
+    if (paymentAccount && isCodAccount(paymentAccount)) {
+      shippingCost += paymentAccount.additionalFee;
     }
 
     // Handle promo code
@@ -347,22 +358,17 @@ export async function createOrder(
     // Generate payment instructions for non-COD orders
     let paymentInstructions: PaymentInstructions | undefined;
 
-    if (input.paymentMethod !== "cod") {
-      const paymentConfig =
-        PAYMENT_ACCOUNTS[
-          input.paymentMethod as Exclude<keyof typeof PAYMENT_ACCOUNTS, "cod">
-        ];
-
+    if (paymentAccount && isMobileWalletAccount(paymentAccount)) {
       paymentInstructions = {
         method: input.paymentMethod,
-        accountTitle: paymentConfig.accountTitle,
-        accountNumber: paymentConfig.accountNumber,
+        accountTitle: paymentAccount.accountTitle,
+        accountNumber: paymentAccount.accountNumber,
         amount: total,
         currency: "PKR",
         reference: order.orderNumber,
-        instructions: paymentConfig.instructions,
+        instructions: paymentAccount.instructions,
         expiresAt: new Date(
-          Date.now() + (paymentConfig.expiryHours ?? 24) * 60 * 60 * 1000
+          Date.now() + (paymentAccount.expiryHours ?? 24) * 60 * 60 * 1000
         ),
       };
 
@@ -372,7 +378,7 @@ export async function createOrder(
         orderNumber: order.orderNumber,
         total: total,
         paymentMethod: input.paymentMethod,
-        paymentProofUrl: `${process.env.NEXT_PUBLIC_APP_URL}/upload-payment-proof?order=${order.id}`,
+        paymentProofUrl: `${process.env.NEXT_PUBLIC_APP_URL}/home/upload-payment-proof?order=${order.id}`,
       });
     }
 
@@ -394,8 +400,8 @@ export async function createOrder(
       }
     }
 
-    revalidatePath("/orders");
-    revalidatePath("/cart");
+    revalidatePath("/home/account/orders");
+    revalidatePath("/home/cart");
 
     return {
       success: true,
@@ -407,6 +413,33 @@ export async function createOrder(
     console.error("Error creating order:", error);
     return { success: false, message: "Failed to create order" };
   }
+}
+
+function isPaymentMethodCod(method: string): boolean {
+  return method.toLowerCase() === "cod";
+}
+function getMobileWalletInstructions(
+  method: PaymentMethodKey,
+  total: number,
+  orderNumber: string,
+  currency: string
+): PaymentInstructions | undefined {
+  const account = PAYMENT_ACCOUNTS[method];
+
+  if (!account || !isMobileWalletAccount(account)) {
+    return undefined;
+  }
+
+  return {
+    method,
+    accountTitle: account.accountTitle,
+    accountNumber: account.accountNumber,
+    amount: total,
+    currency,
+    reference: orderNumber,
+    instructions: account.instructions,
+    expiresAt: new Date(Date.now() + account.expiryHours * 60 * 60 * 1000),
+  };
 }
 
 // Get order confirmation details
@@ -434,25 +467,20 @@ export async function getOrderConfirmation(orderId: string): Promise<{
     if (!order) {
       return { success: false, error: "Order not found" };
     }
-
     const paymentMethod = order.paymentMethod as PaymentMethod;
     let paymentInstructions: PaymentInstructions | undefined;
 
-    if (paymentMethod !== "cod" && order.paymentStatus === "PENDING") {
-      const paymentConfig =
-        PAYMENT_ACCOUNTS[
-          paymentMethod as Exclude<keyof typeof PAYMENT_ACCOUNTS, "cod">
-        ];
-
-      paymentInstructions = {
-        method: paymentMethod,
-        accountTitle: paymentConfig.accountTitle,
-        accountNumber: paymentConfig.accountNumber,
-        amount: Number(order.total),
-        currency: order.currency,
-        reference: order.orderNumber,
-        instructions: paymentConfig.instructions,
-      };
+    if (
+      !isPaymentMethodCod(paymentMethod) &&
+      order.paymentStatus === "PENDING"
+    ) {
+      const paymentMethodKey = paymentMethod as PaymentMethodKey;
+      paymentInstructions = getMobileWalletInstructions(
+        paymentMethodKey,
+        Number(order.total),
+        order.orderNumber,
+        order.currency
+      );
     }
 
     return {

@@ -2,9 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ORDER_STATUS, Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
-import { PAYMENT_ACCOUNTS } from "@/lib/payment-config";
+import { isCodAccount, PAYMENT_ACCOUNTS } from "@/lib/payment-config";
 
-import { getServerAuthSession } from "@/app/action/user.action";
+import { getServerAuthSession } from "@/app/action/home/user.action";
 import prisma from "@/lib/prisma";
 import {
   sendOrderConfirmationEmail,
@@ -217,7 +217,9 @@ export async function POST(request: NextRequest) {
 
     // Add COD fee if applicable
     const codFee =
-      paymentMethod === "cod" ? PAYMENT_ACCOUNTS.cod?.additionalFee || 0 : 0;
+      paymentMethod === isCodAccount(paymentMethod)
+        ? paymentMethod?.additionalFee || 0
+        : 0;
 
     // Handle promo code
     let promoDiscount = 0;

@@ -5,7 +5,7 @@ import {
   toggleSaveForLater,
   updateCartItem,
   updateShippingMethod,
-} from "@/app/action/cart.actions";
+} from "@/app/action/home/cart.actions";
 import type { CartSummary, PromoCodeData, UICartItem } from "@/types/cart";
 import { transformCartItem } from "@/utils/cart/UtilityFunctions";
 import { useCallback, useEffect, useState, useTransition } from "react";

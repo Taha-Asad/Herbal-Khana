@@ -468,3 +468,17 @@ model Setting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Add to your schema.prisma if not exists
+model ShippingZone {
+  id                    String   @id @default(cuid())
+  name                  String
+  regions               Json // Array of region names/codes
+  rate                  Float
+  freeShippingThreshold Float?
+  estimatedDays         String
+  isActive              Boolean  @default(true)
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

@@ -9,12 +9,12 @@ import type {
   PaginationInfo,
   AvailableFilters,
 } from "@/types/product";
-import { getProducts } from "@/app/action/product.action";
+import { getProducts } from "@/app/action/home/product.action";
 import {
   getWishlistProductIds,
   toggleWishlist,
-} from "@/app/action/wishlist.action";
-import { addToCart } from "@/app/action/cart.actions";
+} from "@/app/action/home/wishlist.action";
+import { addToCart } from "@/app/action/home/cart.actions";
 
 // Default filters
 const defaultFilters: FilterState = {

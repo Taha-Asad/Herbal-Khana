@@ -26,8 +26,8 @@ import {
   getNotificationPreferences,
   revokeSession,
   updateNotificationPreferences,
-} from "@/app/action/settings.action";
-import { deleteAccount } from "@/app/action/profile.action";
+} from "@/app/action/home/settings.action";
+import { deleteAccount } from "@/app/action/home/profile.action";
 
 export default function SettingsPage() {
   const [preferences, setPreferences] = useState<NotificationPreferences>({

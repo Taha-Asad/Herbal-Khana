@@ -24,8 +24,8 @@ import type { Product, ProductListItem, ProductVariant } from "@/types/product";
 import {
   isProductWishlisted,
   toggleWishlist,
-} from "@/app/action/wishlist.action";
-import { addToCart } from "@/app/action/cart.actions";
+} from "@/app/action/home/wishlist.action";
+import { addToCart } from "@/app/action/home/cart.actions";
 import ProductGallery from "./ProductGallery";
 import ProductTabs from "./ProductTabs";
 import RelatedProducts from "./RelatedProducts";

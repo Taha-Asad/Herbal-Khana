@@ -26,7 +26,7 @@ import ShippingMethodSelector from "./ShippingMethodSelector";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import CheckoutOrderSummary from "./CheckoutOrderSummary";
 import Image from "next/image";
-import { createOrder } from "@/app/action/orders.action";
+import { createOrder } from "@/app/action/home/orders.action";
 
 interface CheckoutFormProps {
   initialData: CheckoutState;

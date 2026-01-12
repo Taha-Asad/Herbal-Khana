@@ -22,7 +22,7 @@ import {
   getAddresses,
   setDefaultAddress,
   updateAddress,
-} from "@/app/action/addresses.action";
+} from "@/app/action/home/addresses.action";
 
 const initialFormData: AddressInput = {
   label: "",

@@ -117,7 +117,7 @@ export default function AccountSidebar({ user }: AccountSidebarProps) {
         <ul className="space-y-1">
           <li>
             <Link
-              href="/support"
+              href="/home/account/support"
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-stone-600 hover:bg-stone-100 transition-all duration-200 group"
             >
               <HelpCircle className="w-5 h-5 text-stone-400 group-hover:text-[#DDA200]" />

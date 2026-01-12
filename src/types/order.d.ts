@@ -1,6 +1,7 @@
 // types/order.ts
 import React from "react";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@prisma/client";
+import { StaticImageData } from "next/image";
 
 /* ===========================
    RE-EXPORT PRISMA ENUMS
@@ -60,7 +61,8 @@ export interface OrderItem {
   id: string;
   name: string;
   sku: string;
-  image?: string | null;
+  image?: string | StaticImageData;
+  variant?: string;
   price: number;
   quantity: number;
   subtotal?: number;

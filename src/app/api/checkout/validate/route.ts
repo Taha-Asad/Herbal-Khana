@@ -1,5 +1,5 @@
 // app/api/checkout/validate/route.ts
-import { getServerAuthSession } from "@/app/action/user.action";
+import { getServerAuthSession } from "@/app/action/home/user.action";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 

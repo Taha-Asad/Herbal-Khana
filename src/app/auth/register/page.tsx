@@ -28,7 +28,7 @@ interface PasswordStrength {
 }
 
 import logo from "../../../../public/sample-logo2.jpeg";
-import { CreateUser } from "@/app/action/user.action";
+import { CreateUser } from "@/app/action/home/user.action";
 import toast from "react-hot-toast";
 
 export default function SignUpPage() {
@@ -246,7 +246,7 @@ export default function SignUpPage() {
                   <>
                     Already have an account?{" "}
                     <Link
-                      href="/auth/signin"
+                      href="/auth/login"
                       className="text-[#DDA200] font-semibold hover:text-[#b38600] transition-colors"
                     >
                       Sign in

@@ -44,7 +44,7 @@ export default function TrackingTimeline({
 
           return (
             <div
-              key={event.id}
+              key={`${event.id}-${event.status}-${index}`}
               className={`relative flex gap-4 pb-8 last:pb-0 transition-all duration-500 ${
                 isVisible
                   ? "opacity-100 translate-x-0"

@@ -20,7 +20,7 @@ import {
   getWishlist,
   moveWishlistToCart,
   removeFromWishlist,
-} from "@/app/action/wishlist.action";
+} from "@/app/action/home/wishlist.action";
 
 export default function WishlistPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);
@@ -170,7 +170,7 @@ export default function WishlistPage() {
               >
                 {/* Image */}
                 <div className="relative aspect-square bg-stone-100">
-                  <Link href={`/products/${item.slug}`}>
+                  <Link href={`/home/shop/products/${item.slug}`}>
                     <Image
                       src={item.image}
                       alt={item.name}
@@ -207,7 +207,7 @@ export default function WishlistPage() {
 
                 {/* Content */}
                 <div className="p-4">
-                  <Link href={`/products/${item.slug}`}>
+                  <Link href={`/home/shop/products/${item.slug}`}>
                     <h3 className="font-semibold text-stone-800 hover:text-[#DDA200] transition-colors line-clamp-2">
                       {item.name}
                     </h3>
@@ -253,7 +253,7 @@ export default function WishlistPage() {
                       )}
                     </button>
                     <Link
-                      href={`/products/${item.slug}`}
+                      href={`/home/shop/products/${item.slug}`}
                       className="p-2.5 border-2 border-stone-200 rounded-xl
                         hover:border-[#DDA200] hover:text-[#DDA200] transition-colors"
                     >

@@ -28,7 +28,7 @@ import {
   getProfile,
   requestEmailVerification,
   updateProfile,
-} from "@/app/action/profile.action";
+} from "@/app/action/home/profile.action";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);

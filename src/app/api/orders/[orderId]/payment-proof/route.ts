@@ -1,16 +1,15 @@
-// app/api/orders/[orderId]/payment-proof/route.ts
-import { getServerAuthSession } from "@/app/action/orders.action";
-import { uploadPaymentProof } from "@/app/action/payment.action";
+import { getServerAuthSession } from "@/app/action/home/user.action";
+import { uploadPaymentProof } from "@/app/action/home/payment.action";
 import { NextRequest, NextResponse } from "next/server";
 
-interface RouteParams {
-  params: { orderId: string };
-}
-
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ orderId: string }> }
+) {
   try {
-    const session = await getServerAuthSession();
+    const { orderId } = await context.params;
 
+    const session = await getServerAuthSession();
     if (!session?.user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
 
     const result = await uploadPaymentProof({
-      orderId: params.orderId,
+      orderId,
       transactionId: body.transactionId,
       senderName: body.senderName,
       senderPhone: body.senderPhone,
@@ -31,9 +30,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (result.success) {
       return NextResponse.json(result);
-    } else {
-      return NextResponse.json(result, { status: 400 });
     }
+
+    return NextResponse.json(result, { status: 400 });
   } catch (error) {
     console.error("Error uploading payment proof:", error);
     return NextResponse.json(

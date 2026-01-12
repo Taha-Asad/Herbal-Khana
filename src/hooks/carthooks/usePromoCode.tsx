@@ -1,4 +1,7 @@
-import { applyPromoCode, removePromoCode } from "@/app/action/cart.actions";
+import {
+  applyPromoCode,
+  removePromoCode,
+} from "@/app/action/home/cart.actions";
 import type { PromoCode } from "@/types/cart";
 import { transformPromoCode } from "@/utils/cart/UtilityFunctions";
 import { useCallback, useState } from "react";

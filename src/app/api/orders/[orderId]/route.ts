@@ -1,15 +1,15 @@
 // app/api/orders/[orderId]/route.ts
-import { getServerAuthSession } from "@/app/action/user.action";
+import { getServerAuthSession } from "@/app/action/home/user.action";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-interface RouteParams {
-  params: { orderId: string };
-}
-
 // Get order details
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ orderId: string }> }
+) {
   try {
+    const { orderId } = await context.params;
     const session = await getServerAuthSession();
 
     if (!session?.user) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const order = await prisma.order.findUnique({
       where: {
-        id: params.orderId,
+        id: orderId,
         userId: session.user.id,
       },
       include: {
@@ -86,8 +86,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // Cancel order
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ orderId: string }> }
+) {
   try {
+    const { orderId } = await context.params;
+
     const session = await getServerAuthSession();
 
     if (!session?.user) {
@@ -102,7 +107,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const order = await prisma.order.findUnique({
       where: {
-        id: params.orderId,
+        id: orderId,
         userId: session.user.id,
       },
     });

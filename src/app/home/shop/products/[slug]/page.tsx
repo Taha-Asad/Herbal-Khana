@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import {
   getProductBySlug,
   getRelatedProducts,
-} from "@/app/action/product.action";
+} from "@/app/action/home/product.action";
 import ProductDetails from "@/components/layout/home/Product/ProductDetails";
 
 interface ProductPageProps {

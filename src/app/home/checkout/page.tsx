@@ -1,11 +1,11 @@
 // app/checkout/page.tsx
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
-import { getServerAuthSession } from "@/app/action/user.action";
+import { getServerAuthSession } from "@/app/action/home/user.action";
 import {
   getCheckoutData,
   validateCheckout,
-} from "@/app/action/checkout.actions";
+} from "@/app/action/home/checkout.actions";
 import CheckoutClient from "./CheckoutClient";
 
 export const metadata: Metadata = {

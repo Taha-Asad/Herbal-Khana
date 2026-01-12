@@ -62,7 +62,7 @@ export type ServerCartItem = {
 
 interface UICartItem {
   id: string;
-  cartId: string;
+  cartId?: string;
   variantId: string;
   productId: string;
   name: string;

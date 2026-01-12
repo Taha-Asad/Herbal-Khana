@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import logo from "../../../../public/sample-logo2.jpeg";
 import toast from "react-hot-toast";
-import { forgotPassword } from "@/app/action/user.action";
+import { forgotPassword } from "@/app/action/home/user.action";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

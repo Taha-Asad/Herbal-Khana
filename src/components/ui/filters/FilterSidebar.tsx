@@ -10,7 +10,7 @@ import {
   Star,
 } from "lucide-react";
 import type { FilterState, AvailableFilters } from "@/types/product";
-import { getAvailableFilters } from "@/app/action/product.action";
+import { getAvailableFilters } from "@/app/action/home/product.action";
 
 interface FilterSidebarProps {
   filters: FilterState;

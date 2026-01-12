@@ -24,8 +24,6 @@ import {
   HelpCircle,
   Calendar,
   Receipt,
-  ExternalLink,
-  Mail,
   ChevronRight,
 } from "lucide-react";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@prisma/client";
@@ -34,7 +32,7 @@ import {
   cancelOrder,
   getOrderById,
   reorder,
-} from "@/app/action/order-tracking.actions";
+} from "@/app/action/home/order-tracking.actions";
 import useCopyToClipboard from "@/hooks/useCopyToClipboard";
 import { OrderDetails } from "@/types/order";
 
@@ -185,8 +183,14 @@ export default function OrderDetailsPage() {
   }, [orderId]);
 
   useEffect(() => {
-    fetchOrder();
-  }, [fetchOrder]);
+    if (!orderId) return;
+
+    const run = async () => {
+      await fetchOrder();
+    };
+
+    run();
+  }, [orderId, fetchOrder]);
 
   const handleCancelOrder = async () => {
     if (!order) return;
@@ -213,7 +217,7 @@ export default function OrderDetailsPage() {
 
     if (result.success) {
       toast.success("Items added to cart");
-      router.push("/cart");
+      router.push("/home/cart");
     } else {
       toast.error(result.error || "Failed to add items to cart");
     }
@@ -262,7 +266,7 @@ export default function OrderDetailsPage() {
           We could not find the order you&apos;re looking for.
         </p>
         <Link
-          href="/account/orders"
+          href="/home/account/orders"
           className="inline-flex items-center gap-2 px-6 py-3 bg-[#DDA200] 
             text-white font-semibold rounded-xl hover:bg-[#b38600] transition-colors"
         >

@@ -18,7 +18,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import logo from "../../../../public/sample-logo2.jpeg";
-import { loginUser } from "@/app/action/user.action";
+import { loginUser } from "@/app/action/home/user.action";
 import toast from "react-hot-toast";
 export default function SignInPage() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function SignInPage() {
     );
     if (!res?.success) {
       setIsLoading(false);
-      toast.error(res?.message || "Invalid credentials");
+      toast.error("Invalid credentials");
       return;
     }
 

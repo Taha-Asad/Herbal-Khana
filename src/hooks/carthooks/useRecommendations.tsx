@@ -1,4 +1,7 @@
-import { addToCart, getRecommendedProducts } from "@/app/action/cart.actions";
+import {
+  addToCart,
+  getRecommendedProducts,
+} from "@/app/action/home/cart.actions";
 import type { RecommendedProduct } from "@/types/cart";
 import { useCallback, useEffect, useState } from "react";
 

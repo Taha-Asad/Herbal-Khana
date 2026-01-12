@@ -5,7 +5,7 @@ import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Loader2, Check, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import { uploadPaymentProof } from "@/app/action/payment.action";
+import { uploadPaymentProof } from "@/app/action/home/payment.action";
 
 interface PaymentProofUploadProps {
   orderId: string;
@@ -111,7 +111,10 @@ export default function PaymentProofUpload({
         throw new Error(result.message || "Failed to submit payment proof");
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
       setError(errorMessage);
     } finally {
       setIsUploading(false);

@@ -26,7 +26,7 @@ import { formatCurrency } from "@/utils/OrderRelated";
 import {
   getUserOrders,
   getOrderStats,
-} from "@/app/action/order-tracking.actions";
+} from "@/app/action/home/order-tracking.actions";
 import { OrderListItem, OrderStats } from "@/types/order";
 
 // Status configuration

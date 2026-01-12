@@ -5,10 +5,6 @@ import React, { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import ProductsContent from "@/components/layout/home/Product/ProductContent";
 
-// =============================================================================
-// TYPES & INTERFACES
-// =============================================================================
-
 export default function ProductsPage() {
   return (
     <Suspense
