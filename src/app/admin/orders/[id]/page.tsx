@@ -20,9 +20,17 @@ import {
   Copy,
   MessageSquare,
   Save,
+  ImageIcon,
+  Eye,
+  CheckCircle,
+  XCircle,
+  X,
+  RefreshCw,
+  Hash,
 } from "lucide-react";
 import { getOrder, updateOrder } from "@/app/action/admin/orders.actions";
-import { Order, UpdateOrderData } from "@/types/admin";
+import { verifyPayment } from "@/app/action/home/payment.action";
+import type { Order, UpdateOrderData } from "@/types/admin";
 import { ORDER_STATUS } from "@prisma/client";
 import {
   OrderStatusBadge,
@@ -30,6 +38,7 @@ import {
 } from "@/components/admin/ui/StatusBadge";
 import ConfirmModal from "@/components/admin/ui/ConfirmModal";
 import toast from "react-hot-toast";
+import useCopyToClipboard from "@/hooks/useCopyToClipboard";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-PK", {
@@ -47,6 +56,43 @@ function formatDate(dateString: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+// Payment Proof Status Badge Component
+function PaymentProofStatusBadge({
+  status,
+}: {
+  status: "pending_verification" | "verified" | "rejected";
+}) {
+  const configs = {
+    pending_verification: {
+      label: "Pending Verification",
+      className: "bg-amber-100 text-amber-700 border-amber-200",
+      icon: Clock,
+    },
+    verified: {
+      label: "Verified",
+      className: "bg-green-100 text-green-700 border-green-200",
+      icon: CheckCircle,
+    },
+    rejected: {
+      label: "Rejected",
+      className: "bg-red-100 text-red-700 border-red-200",
+      icon: XCircle,
+    },
+  };
+
+  const config = configs[status];
+  const Icon = config.icon;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${config.className}`}
+    >
+      <Icon className="w-3 h-3" />
+      {config.label}
+    </span>
+  );
 }
 
 const statusActions: { value: ORDER_STATUS; label: string; color: string }[] = [
@@ -75,11 +121,18 @@ export default function OrderDetailPage() {
     null
   );
 
-  // Use useTransition for loading state
+  // Payment Proof States
+  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const { copy } = useCopyToClipboard();
+
   const [isPending, startTransition] = useTransition();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // ✅ Define loadOrder with useCallback BEFORE useEffect
   const loadOrder = useCallback(async () => {
     const result = await getOrder(orderId);
     if (result.success && result.data) {
@@ -93,14 +146,12 @@ export default function OrderDetailPage() {
     setIsInitialLoading(false);
   }, [orderId]);
 
-  // ✅ Now useEffect comes AFTER loadOrder is defined
   useEffect(() => {
     startTransition(() => {
       loadOrder();
     });
   }, [loadOrder]);
 
-  // Combined loading state
   const loading = isInitialLoading || isPending;
 
   const handleStatusChange = async () => {
@@ -159,9 +210,50 @@ export default function OrderDetailPage() {
     setUpdating(false);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+  // Handle Payment Proof Approval
+  const handleApprovePayment = async () => {
+    if (!order) return;
+
+    setIsVerifying(true);
+    const result = await verifyPayment(orderId, true);
+
+    if (result.success) {
+      toast.success("Payment approved successfully!");
+      startTransition(() => {
+        loadOrder();
+      });
+    } else {
+      toast.error(result.message || "Failed to approve payment");
+    }
+
+    setIsVerifying(false);
+    setShowApproveModal(false);
+  };
+
+  // Handle Payment Proof Rejection
+  const handleRejectPayment = async () => {
+    if (!order) return;
+
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+
+    setIsVerifying(true);
+    const result = await verifyPayment(orderId, false, rejectionReason);
+
+    if (result.success) {
+      toast.success("Payment rejected. Customer has been notified.");
+      startTransition(() => {
+        loadOrder();
+      });
+    } else {
+      toast.error(result.message || "Failed to reject payment");
+    }
+
+    setIsVerifying(false);
+    setShowRejectModal(false);
+    setRejectionReason("");
   };
 
   if (loading) {
@@ -192,7 +284,6 @@ export default function OrderDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* ... rest of the component remains the same ... */}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -208,7 +299,7 @@ export default function OrderDetailPage() {
                 Order #{order.orderNumber}
               </h1>
               <button
-                onClick={() => copyToClipboard(order.orderNumber)}
+                onClick={() => copy(order.orderNumber)}
                 className="p-1 hover:bg-gray-100 rounded transition-colors"
               >
                 <Copy className="w-4 h-4 text-gray-400" />
@@ -224,6 +315,52 @@ export default function OrderDetailPage() {
           <PaymentStatusBadge status={order.paymentStatus} size="md" />
         </div>
       </div>
+
+      {/* Payment Proof Alert Banner */}
+      {order.paymentProof &&
+        order.paymentProof.status === "pending_verification" && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <ImageIcon className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-amber-900">
+                  Payment Proof Awaiting Verification
+                </h3>
+                <p className="text-sm text-amber-700">
+                  Customer has uploaded payment proof. Please review and verify.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowPaymentProofModal(true)}
+                className="px-4 py-2 bg-white border border-amber-300 text-amber-700 
+                font-medium rounded-lg hover:bg-amber-50 transition-colors flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                View Proof
+              </button>
+              <button
+                onClick={() => setShowApproveModal(true)}
+                className="px-4 py-2 bg-green-500 text-white font-medium rounded-lg 
+                hover:bg-green-600 transition-colors flex items-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Approve
+              </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg 
+                hover:bg-red-600 transition-colors flex items-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Status Actions */}
       <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
@@ -502,6 +639,166 @@ export default function OrderDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Payment Proof Section */}
+          {order.paymentProof && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-amber-500" />
+                  <h2 className="font-semibold text-gray-900">Payment Proof</h2>
+                </div>
+                <PaymentProofStatusBadge status={order.paymentProof.status} />
+              </div>
+              <div className="p-6 space-y-4">
+                {/* Proof Image Thumbnail */}
+                {order.paymentProof.proofImageUrl && (
+                  <button
+                    onClick={() => setShowPaymentProofModal(true)}
+                    className="relative group w-full"
+                  >
+                    <div className="w-full aspect-video rounded-xl overflow-hidden border-2 border-gray-200 group-hover:border-amber-500 transition-colors">
+                      <Image
+                        src={order.paymentProof.proofImageUrl}
+                        alt="Payment proof"
+                        width={400}
+                        height={300}
+                        className="w-full h-full object-contain bg-gray-50"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                      <Eye className="w-8 h-8 text-white" />
+                    </div>
+                    {order.paymentProof.isResubmission && (
+                      <span className="absolute -top-2 -right-2 px-2.5 py-1 bg-purple-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" />
+                        Resubmit
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Sender Details */}
+                <div className="space-y-2.5 bg-gray-50 rounded-xl p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Sender Name
+                    </span>
+                    <span className="font-medium text-gray-900">
+                      {order.paymentProof.senderName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Phone
+                    </span>
+                    <span className="font-medium text-gray-900">
+                      {order.paymentProof.senderPhone}
+                    </span>
+                  </div>
+                  {order.paymentProof.transactionId && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500 flex items-center gap-2">
+                        <Hash className="w-4 h-4" />
+                        Transaction ID
+                      </span>
+                      <span className="font-mono font-medium text-gray-900">
+                        {order.paymentProof.transactionId}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Uploaded
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {formatDate(order.paymentProof.uploadedAt)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {order.paymentProof.notes && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-amber-700 uppercase mb-1">
+                      Customer Notes
+                    </p>
+                    <p className="text-sm text-amber-800">
+                      {order.paymentProof.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons for Pending Verification */}
+                {order.paymentProof.status === "pending_verification" && (
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => setShowApproveModal(true)}
+                      disabled={isVerifying}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 
+                        bg-green-500 text-white font-medium rounded-lg 
+                        hover:bg-green-600 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      disabled={isVerifying}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 
+                        bg-red-500 text-white font-medium rounded-lg 
+                        hover:bg-red-600 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Reject
+                    </button>
+                  </div>
+                )}
+
+                {/* Verified Info */}
+                {order.paymentProof.status === "verified" &&
+                  order.paymentProof.verifiedAt && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800">
+                          Payment Verified
+                        </p>
+                        <p className="text-xs text-green-600">
+                          Verified on{" "}
+                          {formatDate(order.paymentProof.verifiedAt)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Rejected Info */}
+                {order.paymentProof.status === "rejected" && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <XCircle className="w-5 h-5 text-red-500" />
+                      <p className="text-sm font-medium text-red-800">
+                        Payment Rejected
+                      </p>
+                    </div>
+                    {order.paymentProof.rejectionReason && (
+                      <p className="text-sm text-red-700">
+                        Reason: {order.paymentProof.rejectionReason}
+                      </p>
+                    )}
+                    {order.paymentProof.rejectedAt && (
+                      <p className="text-xs text-red-600 mt-1">
+                        Rejected on {formatDate(order.paymentProof.rejectedAt)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -520,6 +817,187 @@ export default function OrderDetailPage() {
         variant={selectedStatus === "CANCELLED" ? "danger" : "info"}
         isLoading={updating}
       />
+
+      {/* Payment Proof Image Modal */}
+      {showPaymentProofModal && order.paymentProof?.proofImageUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowPaymentProofModal(false)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  Payment Proof - #{order.orderNumber}
+                </h3>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-sm text-gray-500">
+                    {formatCurrency(order.total)}
+                  </span>
+                  <PaymentProofStatusBadge status={order.paymentProof.status} />
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentProofModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Image */}
+            <div className="p-4 max-h-[60vh] overflow-auto bg-gray-50">
+              <Image
+                src={order.paymentProof.proofImageUrl}
+                alt="Payment proof"
+                width={800}
+                height={800}
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+
+            {/* Details */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Sender</p>
+                  <p className="font-medium text-gray-900">
+                    {order.paymentProof.senderName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Phone</p>
+                  <p className="font-medium text-gray-900">
+                    {order.paymentProof.senderPhone}
+                  </p>
+                </div>
+                {order.paymentProof.transactionId && (
+                  <div>
+                    <p className="text-gray-500">Transaction ID</p>
+                    <p className="font-mono font-medium text-gray-900">
+                      {order.paymentProof.transactionId}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-500">Uploaded</p>
+                  <p className="font-medium text-gray-900">
+                    {formatDate(order.paymentProof.uploadedAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            {order.paymentProof.status === "pending_verification" && (
+              <div className="p-4 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPaymentProofModal(false);
+                    setShowApproveModal(true);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 
+                    bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  Approve Payment
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPaymentProofModal(false);
+                    setShowRejectModal(true);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 
+                    bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                  Reject
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Approve Payment Modal */}
+      <ConfirmModal
+        isOpen={showApproveModal}
+        onClose={() => setShowApproveModal(false)}
+        onConfirm={handleApprovePayment}
+        title="Approve Payment"
+        message={`Are you sure you want to approve the payment for order #${order.orderNumber}?\n\nThis will:\n• Mark payment as verified\n• Update order status to "Processing"\n• Send confirmation email to customer`}
+        confirmLabel="Approve Payment"
+        variant="info"
+        isLoading={isVerifying}
+      />
+
+      {/* Reject Payment Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <XCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Reject Payment
+              </h3>
+            </div>
+
+            <p className="text-gray-600 mb-4">
+              Rejecting payment for order <strong>#{order.orderNumber}</strong>.
+              The customer will be notified and can resubmit their payment
+              proof.
+            </p>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+                placeholder="e.g., Image is blurry, amount doesn't match, wrong account..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none
+                  focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectionReason("");
+                }}
+                disabled={isVerifying}
+                className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 
+                  font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectPayment}
+                disabled={isVerifying || !rejectionReason.trim()}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 
+                  bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 
+                  transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isVerifying ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <XCircle className="w-5 h-5" />
+                )}
+                Reject Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

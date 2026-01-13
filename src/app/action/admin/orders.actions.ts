@@ -30,6 +30,7 @@ interface OrderWithRelations {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: string | null;
+  paymentId: string | null; // Add this - stores payment proof JSON
   subtotal: number | { toNumber(): number };
   shippingCost: number | { toNumber(): number };
   tax: number | { toNumber(): number };
@@ -257,94 +258,90 @@ export async function getOrders(
   }
 }
 
-// ============================================================================
-// GET SINGLE ORDER
-// ============================================================================
+// export async function getOrder(id: string): Promise<ActionResponse<Order>> {
+//   try {
+//     await requireAdmin();
 
-export async function getOrder(id: string): Promise<ActionResponse<Order>> {
-  try {
-    await requireAdmin();
+//     const order = await prisma.order.findUnique({
+//       where: { id },
+//       include: {
+//         user: {
+//           select: {
+//             id: true,
+//             name: true,
+//             email: true,
+//             phone: true,
+//           },
+//         },
+//         items: true,
+//         timeline: {
+//           orderBy: { createdAt: "desc" },
+//         },
+//       },
+//     });
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-          },
-        },
-        items: true,
-        timeline: {
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
+//     if (!order) {
+//       return { success: false, error: "Order not found" };
+//     }
 
-    if (!order) {
-      return { success: false, error: "Order not found" };
-    }
+//     // Cast to typed order
+//     const typedOrder = order as unknown as OrderWithRelations;
 
-    // Cast to typed order
-    const typedOrder = order as unknown as OrderWithRelations;
-
-    return {
-      success: true,
-      data: {
-        id: typedOrder.id,
-        orderNumber: typedOrder.orderNumber,
-        status: typedOrder.status,
-        paymentStatus: typedOrder.paymentStatus,
-        paymentMethod: typedOrder.paymentMethod ?? undefined,
-        customer: {
-          id: typedOrder.user.id,
-          name: typedOrder.user.name || "Unknown",
-          email: typedOrder.user.email,
-          phone: typedOrder.user.phone ?? undefined,
-        },
-        items: typedOrder.items.map((item) => ({
-          id: item.id,
-          productId: item.productId ?? undefined,
-          name: item.name,
-          sku: item.sku,
-          image: item.image ?? undefined,
-          price: toNumber(item.price),
-          quantity: item.quantity,
-          subtotal: toNumber(item.subtotal),
-        })),
-        timeline: typedOrder.timeline.map((t) => ({
-          id: t.id,
-          status: t.status,
-          message: t.message ?? undefined,
-          createdBy: t.createdBy ?? undefined,
-          createdAt: t.createdAt.toISOString(),
-        })),
-        subtotal: toNumber(typedOrder.subtotal),
-        shippingCost: toNumber(typedOrder.shippingCost),
-        tax: toNumber(typedOrder.tax),
-        discount: toNumber(typedOrder.discount),
-        promoDiscount: toNumber(typedOrder.promoDiscount),
-        total: toNumber(typedOrder.total),
-        currency: typedOrder.currency,
-        shippingAddress: parseAddress(typedOrder.shippingAddress),
-        billingAddress: parseAddress(typedOrder.billingAddress),
-        trackingNumber: typedOrder.trackingNumber ?? undefined,
-        estimatedDelivery: typedOrder.estimatedDelivery?.toISOString(),
-        customerNote: typedOrder.customerNote ?? undefined,
-        adminNote: typedOrder.adminNote ?? undefined,
-        createdAt: typedOrder.createdAt.toISOString(),
-        paidAt: typedOrder.paidAt?.toISOString(),
-        shippedAt: typedOrder.shippedAt?.toISOString(),
-        deliveredAt: typedOrder.deliveredAt?.toISOString(),
-      },
-    };
-  } catch (error) {
-    console.error("getOrder error:", error);
-    return { success: false, error: "Failed to load order" };
-  }
-}
+//     return {
+//       success: true,
+//       data: {
+//         id: typedOrder.id,
+//         orderNumber: typedOrder.orderNumber,
+//         status: typedOrder.status,
+//         paymentStatus: typedOrder.paymentStatus,
+//         paymentMethod: typedOrder.paymentMethod ?? undefined,
+//         customer: {
+//           id: typedOrder.user.id,
+//           name: typedOrder.user.name || "Unknown",
+//           email: typedOrder.user.email,
+//           phone: typedOrder.user.phone ?? undefined,
+//         },
+//         items: typedOrder.items.map((item) => ({
+//           id: item.id,
+//           productId: item.productId ?? undefined,
+//           name: item.name,
+//           sku: item.sku,
+//           image: item.image ?? undefined,
+//           price: toNumber(item.price),
+//           quantity: item.quantity,
+//           subtotal: toNumber(item.subtotal),
+//         })),
+//         timeline: typedOrder.timeline.map((t) => ({
+//           id: t.id,
+//           status: t.status,
+//           message: t.message ?? undefined,
+//           createdBy: t.createdBy ?? undefined,
+//           createdAt: t.createdAt.toISOString(),
+//         })),
+//         subtotal: toNumber(typedOrder.subtotal),
+//         shippingCost: toNumber(typedOrder.shippingCost),
+//         tax: toNumber(typedOrder.tax),
+//         discount: toNumber(typedOrder.discount),
+//         promoDiscount: toNumber(typedOrder.promoDiscount),
+//         total: toNumber(typedOrder.total),
+//         currency: typedOrder.currency,
+//         shippingAddress: parseAddress(typedOrder.shippingAddress),
+//         billingAddress: parseAddress(typedOrder.billingAddress),
+//         trackingNumber: typedOrder.trackingNumber ?? undefined,
+//         estimatedDelivery: typedOrder.estimatedDelivery?.toISOString(),
+//         customerNote: typedOrder.customerNote ?? undefined,
+//         adminNote: typedOrder.adminNote ?? undefined,
+//         createdAt: typedOrder.createdAt.toISOString(),
+//         paidAt: typedOrder.paidAt?.toISOString(),
+//         shippedAt: typedOrder.shippedAt?.toISOString(),
+//         deliveredAt: typedOrder.deliveredAt?.toISOString(),
+//       },
+//     };
+//   } catch (error) {
+//     console.error("getOrder error:", error);
+//     return { success: false, error: "Failed to load order" };
+//   }
+// }
 
 // ============================================================================
 // UPDATE ORDER
@@ -658,5 +655,132 @@ export async function exportOrders(
   } catch (error) {
     console.error("exportOrders error:", error);
     return { success: false, error: "Failed to export orders" };
+  }
+}
+
+// app/action/admin/orders.actions.ts
+
+// Add PaymentProofData interface at the top
+interface PaymentProofData {
+  transactionId?: string;
+  senderName: string;
+  senderPhone: string;
+  proofImageUrl: string;
+  notes?: string;
+  uploadedAt: string;
+  status: "pending_verification" | "verified" | "rejected";
+  isResubmission?: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+}
+
+// Update OrderWithRelations interface
+
+// Add helper function to parse payment proof
+function parsePaymentProof(paymentId: string | null): PaymentProofData | null {
+  if (!paymentId) return null;
+
+  try {
+    const parsed = JSON.parse(paymentId) as PaymentProofData;
+    // Validate it has the required fields
+    if (parsed.proofImageUrl && parsed.senderName) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Update getOrder function
+export async function getOrder(id: string): Promise<ActionResponse<Order>> {
+  try {
+    await requireAdmin();
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        items: true,
+        timeline: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!order) {
+      return { success: false, error: "Order not found" };
+    }
+
+    // Cast to typed order
+    const typedOrder = order as unknown as OrderWithRelations;
+
+    // Parse payment proof from paymentId
+    const paymentProof = parsePaymentProof(order.paymentId);
+
+    return {
+      success: true,
+      data: {
+        id: typedOrder.id,
+        orderNumber: typedOrder.orderNumber,
+        status: typedOrder.status,
+        paymentStatus: typedOrder.paymentStatus,
+        paymentMethod: typedOrder.paymentMethod ?? undefined,
+        paymentProof, // Include parsed payment proof
+        customer: {
+          id: typedOrder.user.id,
+          name: typedOrder.user.name || "Unknown",
+          email: typedOrder.user.email,
+          phone: typedOrder.user.phone ?? undefined,
+        },
+        items: typedOrder.items.map((item) => ({
+          id: item.id,
+          productId: item.productId ?? undefined,
+          name: item.name,
+          sku: item.sku,
+          image: item.image ?? undefined,
+          price: toNumber(item.price),
+          quantity: item.quantity,
+          subtotal: toNumber(item.subtotal),
+        })),
+        timeline: typedOrder.timeline.map((t) => ({
+          id: t.id,
+          status: t.status,
+          message: t.message ?? undefined,
+          createdBy: t.createdBy ?? undefined,
+          createdAt: t.createdAt.toISOString(),
+        })),
+        subtotal: toNumber(typedOrder.subtotal),
+        shippingCost: toNumber(typedOrder.shippingCost),
+        tax: toNumber(typedOrder.tax),
+        discount: toNumber(typedOrder.discount),
+        promoDiscount: toNumber(typedOrder.promoDiscount),
+        total: toNumber(typedOrder.total),
+        currency: typedOrder.currency,
+        shippingAddress: parseAddress(typedOrder.shippingAddress),
+        billingAddress: parseAddress(typedOrder.billingAddress),
+        trackingNumber: typedOrder.trackingNumber ?? undefined,
+        estimatedDelivery: typedOrder.estimatedDelivery?.toISOString(),
+        customerNote: typedOrder.customerNote ?? undefined,
+        adminNote: typedOrder.adminNote ?? undefined,
+        createdAt: typedOrder.createdAt.toISOString(),
+        paidAt: typedOrder.paidAt?.toISOString(),
+        shippedAt: typedOrder.shippedAt?.toISOString(),
+        deliveredAt: typedOrder.deliveredAt?.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("getOrder error:", error);
+    return { success: false, error: "Failed to load order" };
   }
 }

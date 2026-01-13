@@ -2,118 +2,155 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star, User, ThumbsUp, MessageSquare } from "lucide-react";
+import { FileText, Star, MessageSquare } from "lucide-react";
 import type { Product } from "@/types/product";
+import type { ReviewData, ReviewStats } from "@/app/action/home/review.action";
+import type { CommentData } from "@/app/action/home/comments.action";
+import ReviewSection from "./reviews/ReviewSection";
+import CommentSection from "./comments/CommentSection";
 
 interface ProductTabsProps {
   product: Product;
+  reviews: ReviewData[];
+  reviewStats: ReviewStats;
+  comments: CommentData[];
+  commentCount: number;
 }
 
-type TabId = "description" | "reviews" | "shipping";
+type TabType = "description" | "reviews" | "comments";
 
-export default function ProductTabs({ product }: ProductTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("description");
+export default function ProductTabs({
+  product,
+  reviews,
+  reviewStats,
+  comments,
+  commentCount,
+}: ProductTabsProps) {
+  const [activeTab, setActiveTab] = useState<TabType>("description");
 
   const tabs = [
-    { id: "description" as TabId, label: "Description", icon: MessageSquare },
     {
-      id: "reviews" as TabId,
-      label: `Reviews (${product.reviewCount})`,
-      icon: Star,
+      id: "description" as TabType,
+      label: "Description",
+      icon: FileText,
+      count: null,
     },
-    { id: "shipping" as TabId, label: "Shipping & Returns", icon: ThumbsUp },
+    {
+      id: "reviews" as TabType,
+      label: "Reviews",
+      icon: Star,
+      count: reviewStats.totalReviews,
+    },
+    {
+      id: "comments" as TabType,
+      label: "Discussion",
+      icon: MessageSquare,
+      count: commentCount,
+    },
   ];
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   return (
-    <div className="bg-white rounded-2xl border-2 border-stone-200 overflow-hidden mb-16">
+    <div id="reviews-section" className="mb-16">
       {/* Tab Headers */}
-      <div className="flex border-b border-stone-200 overflow-x-auto">
+      <div className="flex border-b-2 border-stone-200 mb-8 overflow-x-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-4 font-medium whitespace-nowrap transition-colors
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all duration-200 
+                whitespace-nowrap border-b-2 -mb-[2px]
                 ${
-                  activeTab === tab.id
-                    ? "text-[#DDA200] border-b-2 border-[#DDA200] bg-[#FFF9E6]/50"
-                    : "text-stone-600 hover:text-[#DDA200]"
+                  isActive
+                    ? "text-[#DDA200] border-[#DDA200]"
+                    : "text-stone-500 border-transparent hover:text-stone-700 hover:border-stone-300"
                 }`}
             >
               <Icon className="w-5 h-5" />
               {tab.label}
+              {tab.count !== null && tab.count > 0 && (
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    isActive
+                      ? "bg-[#FFF9E6] text-[#DDA200]"
+                      : "bg-stone-100 text-stone-500"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
       {/* Tab Content */}
-      <div className="p-6 md:p-8">
+      <div className="min-h-[400px]">
         {/* Description Tab */}
         {activeTab === "description" && (
-          <div className="prose prose-stone max-w-none">
+          <div className="bg-white rounded-2xl border-2 border-stone-200 p-6 md:p-8">
             {product.description ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: product.description.replace(/\n/g, "<br/>"),
-                }}
-              />
+              <div className="prose prose-stone max-w-none">
+                <div
+                  dangerouslySetInnerHTML={{ __html: product.description }}
+                  className="text-stone-600 leading-relaxed"
+                />
+              </div>
             ) : (
-              <p className="text-stone-500">No description available.</p>
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+                <p className="text-stone-500">
+                  No description available for this product.
+                </p>
+              </div>
             )}
 
-            {/* Product Details */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-stone-50 rounded-xl p-4">
-                <h4 className="font-semibold text-stone-800 mb-3">
-                  Product Details
-                </h4>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-stone-500">SKU</dt>
-                    <dd className="font-medium text-stone-800">
-                      {product.sku}
-                    </dd>
+            {/* Additional Product Info */}
+            <div className="mt-8 pt-8 border-t border-stone-200">
+              <h3 className="text-lg font-semibold text-stone-800 mb-4">
+                Product Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex justify-between py-3 border-b border-stone-100">
+                  <span className="text-stone-500">SKU</span>
+                  <span className="font-medium text-stone-800">
+                    {product.sku}
+                  </span>
+                </div>
+                {product.category && (
+                  <div className="flex justify-between py-3 border-b border-stone-100">
+                    <span className="text-stone-500">Category</span>
+                    <span className="font-medium text-stone-800">
+                      {product.category.name}
+                    </span>
                   </div>
-                  {product.weight && (
-                    <div className="flex justify-between">
-                      <dt className="text-stone-500">Weight</dt>
-                      <dd className="font-medium text-stone-800">
-                        {product.weight}g
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <dt className="text-stone-500">Category</dt>
-                    <dd className="font-medium text-stone-800">
-                      {product.category?.name || "N/A"}
-                    </dd>
+                )}
+                {product.weight && (
+                  <div className="flex justify-between py-3 border-b border-stone-100">
+                    <span className="text-stone-500">Weight</span>
+                    <span className="font-medium text-stone-800">
+                      {product.weight}g
+                    </span>
                   </div>
-                </dl>
-              </div>
-
-              <div className="bg-stone-50 rounded-xl p-4">
-                <h4 className="font-semibold text-stone-800 mb-3">
-                  Available Variants
-                </h4>
-                <div className="space-y-2 text-sm">
-                  {product.variants.map((variant) => (
-                    <div key={variant.id} className="flex justify-between">
-                      <span className="text-stone-500">{variant.name}</span>
-                      <span className="font-medium text-stone-800">
-                        PKR {variant.price.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                )}
+                <div className="flex justify-between py-3 border-b border-stone-100">
+                  <span className="text-stone-500">Availability</span>
+                  <span
+                    className={`font-medium ${
+                      product.inStock ? "text-green-600" : "text-red-500"
+                    }`}
+                  >
+                    {product.inStock ? "In Stock" : "Out of Stock"}
+                  </span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-stone-100">
+                  <span className="text-stone-500">Variants</span>
+                  <span className="font-medium text-stone-800">
+                    {product.variants.length} options
+                  </span>
                 </div>
               </div>
             </div>
@@ -122,139 +159,21 @@ export default function ProductTabs({ product }: ProductTabsProps) {
 
         {/* Reviews Tab */}
         {activeTab === "reviews" && (
-          <div>
-            {/* Rating Summary */}
-            <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b border-stone-200">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-[#DDA200]">
-                  {product.rating > 0 ? product.rating.toFixed(1) : "0"}
-                </div>
-                <div className="flex justify-center mt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.rating)
-                          ? "text-[#DDA200] fill-[#DDA200]"
-                          : "text-stone-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-stone-500 mt-1">
-                  Based on {product.reviewCount} reviews
-                </p>
-              </div>
-            </div>
-
-            {/* Reviews List */}
-            {product.reviews && product.reviews.length > 0 ? (
-              <div className="space-y-6">
-                {product.reviews.map((review) => (
-                  <div key={review.id} className="p-6 bg-stone-50 rounded-xl">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-[#DDA200] rounded-full flex items-center justify-center text-white font-bold">
-                        {review.user.name?.charAt(0) || (
-                          <User className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <span className="font-semibold text-stone-800">
-                              {review.user.name || "Anonymous"}
-                            </span>
-                            <div className="flex items-center gap-2 mt-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? "text-[#DDA200] fill-[#DDA200]"
-                                      : "text-stone-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <span className="text-sm text-stone-400">
-                            {formatDate(review.createdAt)}
-                          </span>
-                        </div>
-                        {review.title && (
-                          <h4 className="font-semibold text-stone-800 mb-1">
-                            {review.title}
-                          </h4>
-                        )}
-                        {review.content && (
-                          <p className="text-stone-600">{review.content}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Star className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-stone-800 mb-2">
-                  No Reviews Yet
-                </h4>
-                <p className="text-stone-500">
-                  Be the first to review this product!
-                </p>
-              </div>
-            )}
-          </div>
+          <ReviewSection
+            productId={product.id}
+            initialReviews={reviews}
+            reviewStats={reviewStats}
+            totalReviews={reviewStats.totalReviews}
+          />
         )}
 
-        {/* Shipping Tab */}
-        {activeTab === "shipping" && (
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold text-stone-800 mb-3">
-                Shipping Information
-              </h4>
-              <ul className="space-y-2 text-stone-600">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Free standard shipping on orders over PKR 5,000
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Standard shipping: 5-7 business days (PKR 200)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Express shipping: 2-3 business days (PKR 400)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Overnight shipping: Next business day (PKR 700)
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-stone-800 mb-3">
-                Return Policy
-              </h4>
-              <ul className="space-y-2 text-stone-600">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  7-day return policy for unused items
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Items must be in original packaging
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#DDA200]">•</span>
-                  Refunds processed within 5-7 business days
-                </li>
-              </ul>
-            </div>
-          </div>
+        {/* Comments Tab */}
+        {activeTab === "comments" && (
+          <CommentSection
+            productId={product.id}
+            initialComments={comments}
+            totalComments={commentCount}
+          />
         )}
       </div>
     </div>

@@ -226,6 +226,21 @@ export interface OrderTimelineEvent {
   createdBy?: string;
   createdAt: string;
 }
+export interface PaymentProofData {
+  transactionId?: string;
+  senderName: string;
+  senderPhone: string;
+  proofImageUrl: string;
+  notes?: string;
+  uploadedAt: string;
+  status: "pending_verification" | "verified" | "rejected";
+  isResubmission?: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+}
 
 export interface Order {
   id: string;
@@ -233,6 +248,7 @@ export interface Order {
   status: ORDER_STATUS;
   paymentStatus: PAYMENT_STATUS;
   paymentMethod?: string;
+  paymentProof?: PaymentProofData | null; // Add this
   customer: {
     id: string;
     name: string;

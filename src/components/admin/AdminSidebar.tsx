@@ -18,6 +18,8 @@ import {
   X,
   LogOut,
   Store,
+  Mail,
+  MoreVertical,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -29,6 +31,8 @@ const navigation = [
   { name: "Customers", href: "/admin/users", icon: Users },
   { name: "Promo Codes", href: "/admin/promo-codes", icon: Tag },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
+  { name: "Newsletter", href: "/admin/newsletter", icon: Mail },
+  { name: "Messages", href: "/admin/messages", icon: MoreVertical },
   { name: "Shipping", href: "/admin/shipping", icon: Truck },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];

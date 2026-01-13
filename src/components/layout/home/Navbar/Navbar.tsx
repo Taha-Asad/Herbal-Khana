@@ -24,8 +24,13 @@ async function Navbar() {
                 style={{ display: "inline" }}
               />
               <div className="font-[Inter]">
-                <span className="text-text-primary">Herbal Khana</span> <br />
-                <span className="text-sm text-primary">Pure Organic</span>
+                <span className="hidden md:block text-text-primary">
+                  Herbal Khana
+                </span>{" "}
+                <br />
+                <span className="hidden md:block text-sm text-primary">
+                  Pure Organic
+                </span>
               </div>
             </Link>
           </div>

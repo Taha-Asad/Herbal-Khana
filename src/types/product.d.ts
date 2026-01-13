@@ -23,7 +23,6 @@ export interface Product {
   images: ProductImage[];
   category: ProductCategory | null;
   variants: ProductVariant[];
-  reviews?: ProductReview[];
   inStock: boolean;
   stockCount: number;
   isNew: boolean;
@@ -35,6 +34,9 @@ export interface Product {
   metaDescription: string | null;
   createdAt: Date;
   updatedAt: Date;
+  reviews?: ProductReview[];
+  comments?: ProductComment[];
+  reviewStats?: ReviewStats;
 }
 export interface ProductVariant {
   id: string;
@@ -126,50 +128,6 @@ export interface SortOption {
   name: string;
 }
 
-// export interface Product {
-//   id: string;
-//   name: string;
-//   slug: string;
-//   description: string | null;
-//   shortDescription: string | null;
-//   sku: string;
-//   costPrice: number | null;
-//   weight: number | null;
-//   price: number;
-//   originalPrice?: number;
-//   discount?: number;
-//   rating: number;
-//   reviewCount: number;
-//   images: ProductImage[];
-//   category: ProductCategory | null;
-//   variants: ProductVariant[];
-//   inStock: boolean;
-//   stockCount: number;
-//   isNew: boolean;
-//   isFeatured: boolean;
-//   isBestseller: boolean;
-//   viewCount: number;
-//   salesCount: number;
-//   metaTitle: string | null;
-//   metaDescription: string | null;
-//   createdAt: Date;
-//   updatedAt: Date;
-// }
-
-export interface ProductReview {
-  id: string;
-  rating: number;
-  title: string | null;
-  content: string | null;
-  isApproved: boolean;
-  createdAt: Date;
-  user: {
-    id: string;
-    name: string | null;
-    image: string | null;
-  };
-}
-
 export interface FilterState {
   categories: string[];
   priceRange: [number, number];
@@ -198,4 +156,45 @@ export interface ProductsResponse {
   products: ProductListItem[];
   pagination: PaginationInfo;
   filters: AvailableFilters;
+}
+
+// types/product.ts - Add these types
+
+export interface ProductReview {
+  id: string;
+  rating: number;
+  title: string | null;
+  content: string | null;
+  isApproved: boolean;
+  isVerifiedPurchase: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+
+export interface ProductComment {
+  id: string;
+  content: string;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  isOwner: boolean;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    rating: number;
+    count: number;
+    percentage: number;
+  }[];
+  verifiedPurchaseCount: number;
 }

@@ -12,6 +12,7 @@ import type {
   ActionResponse,
 } from "@/types/account";
 import { z } from "zod";
+import { sendVerificationEmail } from "@/lib/email/email";
 
 // Validation schemas
 const updateProfileSchema = z.object({
@@ -241,7 +242,7 @@ export async function requestEmailVerification(): Promise<
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, emailVerified: true },
+      select: { name: true, email: true, emailVerified: true },
     });
 
     if (!user) {
@@ -264,8 +265,11 @@ export async function requestEmailVerification(): Promise<
       },
     });
 
-    // TODO: Send verification email
-    // await sendVerificationEmail(user.email, token);
+    await sendVerificationEmail({
+      email: user.email,
+      name: user.name ?? "User",
+      verifyUrl: token,
+    });
 
     return {
       success: true,

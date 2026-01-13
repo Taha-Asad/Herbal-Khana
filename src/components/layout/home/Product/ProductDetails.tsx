@@ -20,7 +20,14 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import type { Product, ProductListItem, ProductVariant } from "@/types/product";
+import type {
+  Product,
+  ProductListItem,
+  ProductVariant,
+  ProductReview,
+  ProductComment,
+} from "@/types/product";
+import type { ReviewData, ReviewStats } from "@/app/action/home/review.action";
 import {
   isProductWishlisted,
   toggleWishlist,
@@ -29,9 +36,15 @@ import { addToCart } from "@/app/action/home/cart.actions";
 import ProductGallery from "./ProductGallery";
 import ProductTabs from "./ProductTabs";
 import RelatedProducts from "./RelatedProducts";
+import type { CommentData } from "@/app/action/home/comments.action";
 
 interface ProductDetailsProps {
-  product: Product;
+  product: Product & {
+    reviews?: ProductReview[];
+    reviewStats?: ReviewStats;
+    comments?: ProductComment[];
+    commentCount?: number;
+  };
   relatedProducts: ProductListItem[];
 }
 
@@ -171,6 +184,25 @@ export default function ProductDetails({
         )
       : null;
 
+  // Prepare review stats with defaults
+  const reviewStats: ReviewStats = product.reviewStats || {
+    averageRating: product.rating || 0,
+    totalReviews: product.reviewCount || 0,
+    ratingDistribution: [
+      { rating: 5, count: 0, percentage: 0 },
+      { rating: 4, count: 0, percentage: 0 },
+      { rating: 3, count: 0, percentage: 0 },
+      { rating: 2, count: 0, percentage: 0 },
+      { rating: 1, count: 0, percentage: 0 },
+    ],
+    verifiedPurchaseCount: 0,
+  };
+
+  // Prepare reviews and comments with defaults
+  const reviews: ReviewData[] = product.reviews || [];
+  const comments: CommentData[] = product.comments || [];
+  const commentCount = product.commentCount || 0;
+
   return (
     <div className="min-h-screen pt-35 pb-10 bg-gradient-to-br from-white via-[#FFF8E1]/20 to-white">
       {/* Background Decorations */}
@@ -251,26 +283,37 @@ export default function ProductDetails({
               {product.name}
             </h1>
 
-            {/* Rating */}
-            <div className="flex items-center gap-3">
+            {/* Rating - Now clickable to scroll to reviews */}
+            <button
+              onClick={() => {
+                document
+                  .getElementById("reviews-section")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`w-5 h-5 ${
-                      i < Math.floor(product.rating)
+                      i < Math.floor(reviewStats.averageRating)
                         ? "text-[#DDA200] fill-[#DDA200]"
+                        : i < reviewStats.averageRating
+                        ? "text-[#DDA200] fill-[#DDA200]/50"
                         : "text-stone-300"
                     }`}
                   />
                 ))}
               </div>
               <span className="text-stone-600">
-                {product.rating > 0 ? product.rating.toFixed(1) : "0"}(
-                {product.reviewCount}{" "}
-                {product.reviewCount === 1 ? "review" : "reviews"})
+                {reviewStats.averageRating > 0
+                  ? reviewStats.averageRating.toFixed(1)
+                  : "0"}{" "}
+                ({reviewStats.totalReviews}{" "}
+                {reviewStats.totalReviews === 1 ? "review" : "reviews"})
               </span>
-            </div>
+            </button>
 
             {/* Price */}
             <div className="flex items-baseline gap-3">
@@ -505,8 +548,14 @@ export default function ProductDetails({
           </div>
         </div>
 
-        {/* Product Tabs (Description, Reviews) */}
-        <ProductTabs product={product} />
+        {/* Product Tabs (Description, Reviews, Comments) */}
+        <ProductTabs
+          product={product}
+          reviews={reviews}
+          reviewStats={reviewStats}
+          comments={comments}
+          commentCount={commentCount}
+        />
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

@@ -10,6 +10,7 @@ import type {
   Product,
   ProductReview,
   CategoryFilter,
+  ProductComment,
 } from "@/types/product";
 import { Prisma } from "@prisma/client";
 
@@ -945,66 +946,66 @@ export async function getCategories(): Promise<CategoriesResult> {
   }
 }
 
-export async function getProductReviews(
-  productId: string,
-  page: number = 1,
-  limit: number = 10
-): Promise<{
-  success: boolean;
-  data?: { reviews: ProductReview[]; total: number; pages: number };
-  message?: string;
-}> {
-  try {
-    const skip = (page - 1) * limit;
+// export async function getProductReviews(
+//   productId: string,
+//   page: number = 1,
+//   limit: number = 10
+// ): Promise<{
+//   success: boolean;
+//   data?: { reviews: ProductReview[]; total: number; pages: number };
+//   message?: string;
+// }> {
+//   try {
+//     const skip = (page - 1) * limit;
 
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
-        where: {
-          productId,
-          isApproved: true,
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, image: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.review.count({
-        where: {
-          productId,
-          isApproved: true,
-        },
-      }),
-    ]);
+//     const [reviews, total] = await Promise.all([
+//       prisma.review.findMany({
+//         where: {
+//           productId,
+//           isApproved: true,
+//         },
+//         include: {
+//           user: {
+//             select: { id: true, name: true, image: true },
+//           },
+//         },
+//         orderBy: { createdAt: "desc" },
+//         skip,
+//         take: limit,
+//       }),
+//       prisma.review.count({
+//         where: {
+//           productId,
+//           isApproved: true,
+//         },
+//       }),
+//     ]);
 
-    return {
-      success: true,
-      data: {
-        reviews: reviews.map((r) => ({
-          id: r.id,
-          rating: r.rating,
-          title: r.title,
-          content: r.content,
-          isApproved: r.isApproved,
-          createdAt: r.createdAt,
-          user: {
-            id: r.user.id,
-            name: r.user.name,
-            image: r.user.image,
-          },
-        })),
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    };
-  } catch (error) {
-    console.error("getProductReviews error:", error);
-    return { success: false, message: "Failed to load reviews" };
-  }
-}
+//     return {
+//       success: true,
+//       data: {
+//         reviews: reviews.map((r) => ({
+//           id: r.id,
+//           rating: r.rating,
+//           title: r.title,
+//           content: r.content,
+//           isApproved: r.isApproved,
+//           createdAt: r.createdAt,
+//           user: {
+//             id: r.user.id,
+//             name: r.user.name,
+//             image: r.user.image,
+//           },
+//         })),
+//         total,
+//         pages: Math.ceil(total / limit),
+//       },
+//     };
+//   } catch (error) {
+//     console.error("getProductReviews error:", error);
+//     return { success: false, message: "Failed to load reviews" };
+//   }
+// }
 // src/actions/products.ts (add to existing file)
 
 export async function getProductBySlug(slug: string): Promise<{
@@ -1116,7 +1117,9 @@ export async function getProductBySlug(slug: string): Promise<{
         title: r.title,
         content: r.content,
         isApproved: r.isApproved,
+        isVerifiedPurchase: r.isVerifiedPurchase,
         createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
         user: {
           id: r.user.id,
           name: r.user.name,
@@ -1139,6 +1142,78 @@ export async function getProductBySlug(slug: string): Promise<{
     return { success: true, data: transformedProduct };
   } catch (error) {
     console.error("getProductBySlug error:", error);
+    return { success: false, message: "Failed to load product" };
+  }
+}
+// Add to actions/products.ts
+
+import {
+  ReviewStats,
+  getProductReviewStats,
+  getProductReviews,
+} from "./review.action";
+import { getProductComments, getProductCommentCount } from "./comments.action";
+
+/**
+ * Get product with full details including reviews and comments
+ */
+export async function getProductWithReviews(slug: string): Promise<{
+  success: boolean;
+  data?: Product & {
+    reviews: ProductReview[];
+    reviewStats: ReviewStats;
+    comments: ProductComment[];
+    commentCount: number;
+  };
+  message?: string;
+}> {
+  try {
+    // Get the product
+    const productResult = await getProductBySlug(slug);
+
+    if (!productResult.success || !productResult.data) {
+      return {
+        success: false,
+        message: productResult.message || "Product not found",
+      };
+    }
+
+    const product = productResult.data;
+
+    // Fetch reviews, review stats, and comments in parallel
+    const [reviewsResult, statsResult, commentsResult, commentCountResult] =
+      await Promise.all([
+        getProductReviews(product.id, { page: 1, limit: 10, sortBy: "newest" }),
+        getProductReviewStats(product.id),
+        getProductComments(product.id, {
+          page: 1,
+          limit: 20,
+          sortBy: "newest",
+        }),
+        getProductCommentCount(product.id),
+      ]);
+
+    return {
+      success: true,
+      data: {
+        ...product,
+        reviews: reviewsResult.success ? reviewsResult.data.reviews : [],
+        reviewStats: statsResult.success
+          ? statsResult.data
+          : {
+              averageRating: product.rating || 0,
+              totalReviews: product.reviewCount || 0,
+              ratingDistribution: [],
+              verifiedPurchaseCount: 0,
+            },
+        comments: commentsResult.success ? commentsResult.data.comments : [],
+        commentCount: commentCountResult.success
+          ? commentCountResult.count || 0
+          : 0,
+      },
+    };
+  } catch (error) {
+    console.error("getProductWithReviews error:", error);
     return { success: false, message: "Failed to load product" };
   }
 }

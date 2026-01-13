@@ -34,9 +34,7 @@ const accountLinks = [
 const MobileNavbar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const getTotalItems = useCartStore((state) => state.getTotalItems);
-
-  const cartCount = getTotalItems();
+  const cartCount = useCartStore((state) => state.totalItems);
 
   // Menu open state
   const [rawOpen, setRawOpen] = useState(false);

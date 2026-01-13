@@ -11,8 +11,7 @@ import { useCartStore } from "@/store/useCartStore";
 
 const DesktopNavbar = () => {
   const { data: session, status } = useSession();
-  const getTotalItems = useCartStore((state) => state.getTotalItems);
-  const cartCount = getTotalItems();
+  const cartCount = useCartStore((state) => state.totalItems);
 
   return (
     <div className="hidden lg:flex items-center space-x-12">

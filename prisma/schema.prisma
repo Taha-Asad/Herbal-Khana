@@ -410,16 +410,16 @@ model OrderTimeline {
 //
 
 model Review {
-  id         String  @id @default(cuid())
-  userId     String
-  productId  String
-  rating     Int
-  title      String?
-  content    String? @db.Text
-  isApproved Boolean @default(false)
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id                 String  @id @default(cuid())
+  userId             String
+  productId          String
+  rating             Int
+  title              String?
+  content            String? @db.Text
+  isApproved         Boolean @default(false)
+  isVerifiedPurchase Boolean @default(false)
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product            Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -481,4 +481,78 @@ model ShippingZone {
   sortOrder             Int      @default(0)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+// schema.prisma - Add these models
+
+// =============================================================================
+// CONTACT MESSAGES
+// =============================================================================
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model ContactMessage {
+  id      String        @id @default(cuid())
+  name    String
+  email   String
+  subject String
+  message String        @db.Text
+  status  ContactStatus @default(NEW)
+
+  // Admin response
+  repliedAt DateTime?
+  repliedBy String?
+  reply     String?   @db.Text
+
+  // Metadata
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// NEWSLETTER SUBSCRIPTIONS
+// =============================================================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+model NewsletterSubscriber {
+  id     String             @id @default(cuid())
+  email  String             @unique
+  status SubscriptionStatus @default(ACTIVE)
+
+  // Subscription details
+  subscribedAt     DateTime  @default(now())
+  unsubscribedAt   DateTime?
+  unsubscribeToken String    @unique @default(cuid())
+
+  // Tracking
+  source    String? // Where they subscribed from (footer, popup, etc.)
+  ipAddress String?
+
+  // Email stats
+  emailsSent      Int       @default(0)
+  emailsOpened    Int       @default(0)
+  lastEmailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
 }
