@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect } from "react";
-import HeroImg1 from "../../../public/homehero.png";
-import HeroImg2 from "../../../public/homehero.png";
-import HeroImg3 from "../../../public/homehero.png";
+import HeroImg1 from "../../../public/image1.jpeg";
+import HeroImg2 from "../../../public/image4.jpeg";
+import HeroImg3 from "../../../public/image7.jpeg";
 import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -24,16 +24,17 @@ function Slider() {
   return (
     <div className="relative py-10 px-2 flex justify-center items-center">
       <div
-        className="overflow-hidden w-full h-auto max-h-[70vh] border-[#FEFCDF] border-8 rounded-2xl"
+        className="overflow-hidden w-full h-[65vh] border-[#FEFCDF] border-8 rounded-2xl"
         ref={emblaRef}
       >
-        <div className="flex">
+        <div className="flex h-full">
           {images.map((img, idx) => (
-            <div key={idx} className="flex-shrink-0 w-full h-full">
+            <div key={idx} className="shrink-0 w-full h-full relative">
               <Image
                 src={img}
                 alt={`Hero Image ${idx + 1}`}
-                className="w-full h-full object-cover max-h-[70vh]"
+                fill
+                className="object-cover"
                 priority
               />
             </div>

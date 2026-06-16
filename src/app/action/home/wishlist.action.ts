@@ -112,7 +112,7 @@ export async function getWishlist(): Promise<WishlistResult> {
           productId: product.id,
           name: product.name,
           slug: product.slug,
-          image: primaryImage?.url || "/images/placeholder.png",
+          image: primaryImage?.url || "/placeholder.svg",
           price: variantPrice,
           originalPrice: hasDiscount ? costPrice : undefined,
           inStock: totalStock > 0,

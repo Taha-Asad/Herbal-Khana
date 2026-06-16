@@ -1,7 +1,7 @@
 import type { CartItemCardProps } from "@/types/cart";
 import { calculateDiscount } from "@/utils/cart/UtilityFunctions";
 import { formatCurrency } from "@/utils/OrderRelated";
-import { AlertCircle, Bookmark, Check, Trash2, Truck } from "lucide-react";
+import { AlertCircle, Bookmark, Check, Trash2, Truck, PackageX } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuantitySelector } from "./QuantitySelector";
@@ -16,6 +16,38 @@ export function CartItemCard({
   const discount = item.originalPrice
     ? calculateDiscount(item.originalPrice, item.price)
     : 0;
+
+  if (item.unavailable) {
+    return (
+      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 md:p-6 opacity-80">
+        <div className="flex gap-4 md:gap-6">
+          <div className="relative w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+            <div className="w-full h-full bg-red-100 rounded-xl overflow-hidden flex items-center justify-center">
+              <PackageX className="w-10 h-10 text-red-400" />
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-bold text-stone-800 line-clamp-2 text-sm md:text-base">{item.name}</p>
+                {item.variant?.size && (
+                  <span className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded-md inline-block mt-2">{item.variant.size}</span>
+                )}
+              </div>
+              <button onClick={onRemove} disabled={isUpdating} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-all disabled:opacity-50" title="Remove item">
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              <span className="text-sm text-red-600 font-medium">This product is no longer available</span>
+            </div>
+            <p className="text-xs text-red-400 mt-1">SKU: {item.sku}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -10,7 +10,7 @@ async function Hero() {
       {/* Background Image */}
       <div
         className="absolute inset-0 w-full h-full bg-cover bg-center blur-[8px] brightness-80"
-        style={{ backgroundImage: "url('/heroback.jpg')" }}
+        style={{ backgroundImage: "url('/heroback.jpeg')" }}
       />
 
       {/* Left gradient overlay */}

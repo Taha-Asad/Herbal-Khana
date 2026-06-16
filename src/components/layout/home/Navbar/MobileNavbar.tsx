@@ -23,12 +23,12 @@ import logo from "@/../public/sample-logo2.jpeg";
 import { useCartStore } from "@/store/useCartStore";
 
 const accountLinks = [
-  { icon: User, label: "My Profile", href: "/account/profile" },
-  { icon: Package, label: "My Orders", href: "/account/orders" },
-  { icon: Heart, label: "Wishlist", href: "/account/wishlist" },
-  { icon: MapPin, label: "Addresses", href: "/account/addresses" },
-  { icon: Settings, label: "Settings", href: "/account/settings" },
-  { icon: HelpCircle, label: "Help & Support", href: "/support" },
+  { icon: User, label: "My Profile", href: "/home/account/profile" },
+  { icon: Package, label: "My Orders", href: "/home/account/orders" },
+  { icon: Heart, label: "Wishlist", href: "/home/account/wishlist" },
+  { icon: MapPin, label: "Addresses", href: "/home/account/addresses" },
+  { icon: Settings, label: "Settings", href: "/home/account/settings" },
+  { icon: HelpCircle, label: "Help & Support", href: "/home/account/support" },
 ];
 
 const MobileNavbar = () => {

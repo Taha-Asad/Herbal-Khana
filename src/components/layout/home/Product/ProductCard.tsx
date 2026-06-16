@@ -30,7 +30,7 @@ const formatCurrency = (amount: number): string => {
   return `PKR ${amount.toLocaleString("en-PK")}`;
 };
 
-const fallbackImage = "/placeholder-product.jpg";
+const fallbackImage = "/placeholder.svg";
 
 export default function ProductCard({
   product,

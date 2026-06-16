@@ -81,8 +81,17 @@ export async function createOrder(
       return { success: false, message: "Your cart is empty" };
     }
 
+    // Filter out unavailable products
+    const activeCartItems = cart.items.filter(
+      (item) => item.variant.product.isActive
+    );
+
+    if (activeCartItems.length === 0) {
+      return { success: false, message: "All items in your cart are no longer available" };
+    }
+
     // Validate stock availability
-    for (const item of cart.items) {
+    for (const item of activeCartItems) {
       if (item.variant.stock < item.quantity) {
         return {
           success: false,
@@ -165,8 +174,8 @@ export async function createOrder(
       return { success: false, message: "Invalid shipping method" };
     }
 
-    // Calculate totals
-    const subtotal = cart.items.reduce(
+    // Calculate totals (active items only)
+    const subtotal = activeCartItems.reduce(
       (sum, item) => sum + Number(item.variant.price) * item.quantity,
       0
     );
@@ -277,8 +286,8 @@ export async function createOrder(
         },
       });
 
-      // Create order items
-      for (const item of cart.items) {
+      // Create order items (active items only)
+      for (const item of activeCartItems) {
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,

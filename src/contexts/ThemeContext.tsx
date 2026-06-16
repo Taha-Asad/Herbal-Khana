@@ -14,6 +14,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 /* ---------- helper (NO STATE) ---------- */
 function getSystemTheme(): "light" | "dark" {
+  // return window.matchMedia("(prefers-color-scheme: dark)").matches
+  //   ? "dark"
+  //   : "light";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";

@@ -22,7 +22,7 @@ export function transformCartItem(
     variantId: item.variantId,
     productId: item.variantId, // Using variantId as productId for now
     name: item.name,
-    image: item.image || "/placeholder-product.jpg",
+    image: item.image || "/placeholder.svg",
     price: item.price,
     originalPrice: item.originalPrice,
     quantity: item.quantity,
@@ -32,6 +32,7 @@ export function transformCartItem(
     stockCount: item.stock,
     estimatedDelivery: "3-5 business days",
     isSavedForLater,
+    unavailable: item.unavailable,
     variant: {
       size: item.size,
       scent: item.scent,
