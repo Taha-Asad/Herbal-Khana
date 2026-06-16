@@ -5,8 +5,9 @@ import { useState } from "react";
 export default function OrderSearchForm({
   onSearch,
   isLoading,
+  initialOrderId = "",
 }: OrderSearchFormProps) {
-  const [orderId, setOrderId] = useState("");
+  const [orderId, setOrderId] = useState(initialOrderId);
   const [contactInfo, setContactInfo] = useState("");
   const [searchType, setSearchType] = useState<"email" | "phone">("email");
 

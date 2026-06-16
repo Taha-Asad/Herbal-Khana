@@ -44,7 +44,7 @@ export default function TrackingTimeline({
 
           return (
             <div
-              key={event.id}
+              key={`${event.id}-${event.status}-${index}`}
               className={`relative flex gap-4 pb-8 last:pb-0 transition-all duration-500 ${
                 isVisible
                   ? "opacity-100 translate-x-0"
@@ -92,7 +92,7 @@ export default function TrackingTimeline({
                           : "text-stone-400"
                       }`}
                     >
-                      {event.title}
+                      {event.status ? "Current Status: " : ""}
                     </h4>
                     <p
                       className={`text-sm mt-0.5 ${
@@ -101,12 +101,12 @@ export default function TrackingTimeline({
                           : "text-stone-400"
                       }`}
                     >
-                      {event.description}
+                      {event.message}
                     </p>
-                    {event.location && (
+                    {event.isCurrent && (
                       <p className="text-sm text-stone-500 mt-1 flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5" />
-                        {event.location}
+                        {event.isCurrent ? "Current Location" : ""}
                       </p>
                     )}
                   </div>

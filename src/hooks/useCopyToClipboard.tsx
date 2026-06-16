@@ -1,16 +1,30 @@
-import { useCallback, useState } from "react";
+// hooks/useCopyToClipboard.ts
+"use client";
 
-export default function useCopyToClipboard(): [
-  boolean,
-  (text: string) => void
-] {
-  const [copied, setCopied] = useState(false);
+import { useState, useCallback } from "react";
+import toast from "react-hot-toast";
 
-  const copy = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+export default function useCopyToClipboard() {
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const copy = useCallback(async (text: string) => {
+    if (!navigator?.clipboard) {
+      console.warn("Clipboard not supported");
+      return false;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      toast.success("Copied to clipboard!");
+      return true;
+    } catch (error) {
+      console.warn("Copy failed", error);
+      setCopiedText(null);
+      toast.error("Failed to copy");
+      return false;
+    }
   }, []);
 
-  return [copied, copy];
+  return { copiedText, copy };
 }

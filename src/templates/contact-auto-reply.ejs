@@ -1,0 +1,356 @@
+<!-- src/templates/contact-auto-reply.ejs -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>We've Received Your Message</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background-color: #f5f5f4;
+        margin: 0;
+        padding: 0;
+        color: #44403c;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #dda200 0%, #b38600 100%);
+        padding: 45px 20px;
+        text-align: center;
+      }
+      .logo-container {
+        background-color: white;
+        width: 65px;
+        height: 65px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      }
+      .header h1 {
+        color: white;
+        margin: 0;
+        font-size: 26px;
+        font-weight: bold;
+      }
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 10px 0 0;
+        font-size: 15px;
+      }
+      .content {
+        padding: 40px 35px;
+        text-align: center;
+      }
+      .check-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      }
+      .check-icon span {
+        color: white;
+        font-size: 35px;
+      }
+      .greeting {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1c1917;
+        margin-bottom: 16px;
+      }
+      .message {
+        line-height: 1.7;
+        margin-bottom: 20px;
+        color: #57534e;
+        font-size: 15px;
+      }
+      .reference-box {
+        background: #fafaf9;
+        border: 1px dashed #e7e5e4;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 25px 0;
+        text-align: left;
+      }
+      .reference-box h4 {
+        margin: 0 0 12px;
+        color: #1c1917;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .reference-box p {
+        margin: 0;
+        color: #78716c;
+        font-size: 14px;
+      }
+      .reference-box strong {
+        color: #dda200;
+      }
+      .timeline {
+        background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+        border-radius: 12px;
+        padding: 25px;
+        margin: 25px 0;
+        text-align: left;
+      }
+      .timeline h4 {
+        margin: 0 0 15px;
+        color: #1c1917;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .timeline-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: #57534e;
+      }
+      .timeline-item:last-child {
+        margin-bottom: 0;
+      }
+      .timeline-item span {
+        margin-right: 10px;
+        font-size: 18px;
+      }
+      .button {
+        display: inline-block;
+        padding: 15px 35px;
+        background-color: #dda200;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 15px;
+        margin-top: 20px;
+        box-shadow: 0 4px 12px rgba(221, 162, 0, 0.3);
+      }
+      .footer {
+        background-color: #fafaf9;
+        padding: 28px;
+        text-align: center;
+        font-size: 12px;
+        color: #a8a29e;
+        border-top: 1px solid #e7e5e4;
+      }
+      .footer a {
+        color: #dda200;
+        text-decoration: none;
+      }
+      .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .social-icon {
+        width: 35px;
+        height: 35px;
+        background: #e7e5e4;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+      }
+      /* ============================
+   MOBILE RESPONSIVENESS
+   ============================ */
+      @media screen and (max-width: 640px) {
+        body {
+          padding: 0 !important;
+        }
+
+        .container {
+          margin: 0 !important;
+          width: 100% !important;
+          border-radius: 0 !important;
+        }
+
+        .header {
+          padding: 35px 16px !important;
+        }
+
+        .header h1 {
+          font-size: 22px !important;
+        }
+
+        .header p {
+          font-size: 14px !important;
+        }
+
+        .content {
+          padding: 28px 18px !important;
+        }
+
+        .greeting {
+          font-size: 20px !important;
+        }
+
+        .message {
+          font-size: 14px !important;
+        }
+
+        .reference-box,
+        .timeline {
+          padding: 18px !important;
+        }
+
+        .timeline h4 {
+          font-size: 14px !important;
+        }
+
+        .timeline-item {
+          font-size: 13px !important;
+        }
+
+        .button {
+          display: block !important;
+          width: 100% !important;
+          padding: 16px 0 !important;
+          font-size: 16px !important;
+        }
+
+        .footer {
+          padding: 22px 16px !important;
+          font-size: 11px !important;
+        }
+
+        .social-icons {
+          gap: 14px !important;
+        }
+
+        .logo-container {
+          width: 58px !important;
+          height: 58px !important;
+        }
+
+        .check-icon {
+          width: 60px !important;
+          height: 60px !important;
+        }
+
+        .check-icon span {
+          font-size: 30px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <img
+            src="<%= logoUrl || 'https://your-domain.com/logo.png' %>"
+            alt="Herbal Khana"
+            width="42"
+            height="42"
+            style="border-radius: 50%"
+          />
+        </div>
+        <h1>Message Received!</h1>
+        <p>We'll get back to you soon</p>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <div class="check-icon">
+          <span>✓</span>
+        </div>
+
+        <div class="greeting">Hi <%= name.split(' ')[0] %>! 👋</div>
+
+        <p class="message">
+          Thank you for reaching out to us! We've received your message and our
+          team is already on it. We appreciate you taking the time to contact
+          Herbal Khana.
+        </p>
+
+        <div class="reference-box">
+          <h4>📝 Your Message Details</h4>
+          <p><strong>Subject:</strong> <%= subject %></p>
+        </div>
+
+        <div class="timeline">
+          <h4>⏱️ What happens next?</h4>
+          <div class="timeline-item">
+            <span>📬</span> Your message has been received
+          </div>
+          <div class="timeline-item">
+            <span>👀</span> Our team will review your inquiry
+          </div>
+          <div class="timeline-item">
+            <span>💬</span> We'll respond within 24-48 hours
+          </div>
+        </div>
+
+        <p class="message">
+          While you wait, why not explore our collection of natural herbal
+          products?
+        </p>
+
+        <a
+          href="<%= shopUrl || 'https://your-domain.com/shop' %>"
+          class="button"
+        >
+          Browse Our Products
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          This is an automated response to confirm we've received your message.
+          <br />
+          Please don't reply to this email.
+        </p>
+
+        <div class="social-icons">
+          <% if (typeof facebookUrl !== 'undefined' && facebookUrl) { %>
+          <a href="<%= facebookUrl %>" class="social-icon">
+            <img
+              src="https://cdn-icons-png.flaticon.com/24/733/733547.png"
+              alt="Facebook"
+              width="16"
+              height="16"
+            />
+          </a>
+          <% } %> <% if (typeof instagramUrl !== 'undefined' && instagramUrl) {
+          %>
+          <a href="<%= instagramUrl %>" class="social-icon">
+            <img
+              src="https://cdn-icons-png.flaticon.com/24/2111/2111463.png"
+              alt="Instagram"
+              width="16"
+              height="16"
+            />
+          </a>
+          <% } %>
+        </div>
+
+        <p style="margin-top: 15px">
+          &copy; <%= new Date().getFullYear() %> Herbal Khana. All rights
+          reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

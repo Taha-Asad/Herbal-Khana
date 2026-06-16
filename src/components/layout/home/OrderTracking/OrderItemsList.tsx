@@ -31,7 +31,7 @@ export default function OrderItemsList({ items }: OrderItemsListProps) {
             {/* Product Image */}
             <div className="w-20 h-20 bg-stone-200 rounded-lg overflow-hidden flex-shrink-0">
               <Image
-                src={item.image}
+                src={item.image || "/images/placeholder.png"}
                 alt={item.name}
                 width={80}
                 height={80}

@@ -2,8 +2,8 @@ import Image from "next/image";
 import React from "react";
 import logo from "../../../../public/sample-logo1.jpeg";
 import Link from "next/link";
-import { socialLinks } from "@/lib/socialLinks";
-import { navlinks, supportlinks } from "@/lib/navlinks";
+import { socialLinks } from "@/lib/dummyData/socialLinks";
+import { navlinks, supportlinks } from "@/lib/dummyData/navlinks";
 import NewsletterBanner from "@/components/ui/NewsletterBanner";
 function Footer() {
   return (

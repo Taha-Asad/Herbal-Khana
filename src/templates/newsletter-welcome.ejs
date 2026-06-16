@@ -1,0 +1,384 @@
+<!-- src/templates/newsletter-welcome.ejs -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Our Newsletter</title>
+    <style>
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background-color: #f5f5f4;
+        margin: 0;
+        padding: 0;
+        color: #44403c;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #dda200 0%, #b38600 100%);
+        padding: 50px 20px;
+        text-align: center;
+      }
+      .logo-container {
+        background-color: white;
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      }
+      .header h1 {
+        color: white;
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+      }
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 12px 0 0;
+        font-size: 16px;
+      }
+      .celebration {
+        font-size: 40px;
+        margin-bottom: 15px;
+      }
+      .content {
+        padding: 40px 30px;
+        text-align: center;
+      }
+      .greeting {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1c1917;
+        margin-bottom: 16px;
+      }
+      .message {
+        line-height: 1.7;
+        margin-bottom: 24px;
+        color: #57534e;
+        font-size: 16px;
+      }
+      .benefits-section {
+        background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+        border-radius: 16px;
+        padding: 30px;
+        margin: 30px 0;
+        text-align: left;
+      }
+      .benefits-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1c1917;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .benefit-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px dashed #e7e5e4;
+      }
+      .benefit-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .benefit-icon {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+        font-size: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .benefit-text h4 {
+        margin: 0 0 4px;
+        color: #1c1917;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .benefit-text p {
+        margin: 0;
+        color: #78716c;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .discount-box {
+        background: linear-gradient(135deg, #dda200 0%, #b38600 100%);
+        border-radius: 16px;
+        padding: 30px;
+        margin: 30px 0;
+        text-align: center;
+        color: white;
+      }
+      .discount-box h3 {
+        margin: 0 0 10px;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .discount-code {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px dashed rgba(255, 255, 255, 0.5);
+        border-radius: 10px;
+        padding: 15px 30px;
+        display: inline-block;
+        margin: 15px 0;
+      }
+      .discount-code span {
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 3px;
+      }
+      .discount-box p {
+        margin: 10px 0 0;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+      .button {
+        display: inline-block;
+        padding: 16px 40px;
+        background-color: #dda200;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 16px;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(221, 162, 0, 0.4);
+      }
+      .button:hover {
+        background-color: #b38600;
+      }
+      .social-section {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid #e7e5e4;
+      }
+      .social-title {
+        font-size: 14px;
+        color: #78716c;
+        margin-bottom: 15px;
+      }
+      .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+      .social-icon {
+        width: 40px;
+        height: 40px;
+        background: #f5f5f4;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s;
+      }
+      .social-icon:hover {
+        background: #dda200;
+      }
+      .footer {
+        background-color: #fafaf9;
+        padding: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #a8a29e;
+        border-top: 1px solid #e7e5e4;
+      }
+      .footer a {
+        color: #dda200;
+        text-decoration: none;
+      }
+      .unsubscribe {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e7e5e4;
+        font-size: 11px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <img
+            src="<%= logoUrl || 'https://your-domain.com/logo.png' %>"
+            alt="Herbal Khana"
+            width="45"
+            height="45"
+            style="border-radius: 50%"
+          />
+        </div>
+        <h1>Welcome to the Family!</h1>
+        <p>You're now part of our herbal community</p>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <div class="greeting">Thank you for subscribing!</div>
+
+        <p class="message">
+          We're thrilled to have you join our community of natural beauty
+          enthusiasts. Get ready to receive exclusive updates, special offers,
+          and expert tips on herbal skincare directly to your inbox.
+        </p>
+
+        <!-- Benefits Section -->
+        <div class="benefits-section">
+          <div class="benefits-title">As a subscriber, you'll get:</div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">🎁</div>
+            <div class="benefit-text">
+              <h4>Exclusive Discounts</h4>
+              <p>
+                Special offers and early access to sales, just for subscribers
+              </p>
+            </div>
+          </div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">🌿</div>
+            <div class="benefit-text">
+              <h4>Natural Beauty Tips</h4>
+              <p>Expert advice on herbal skincare and wellness routines</p>
+            </div>
+          </div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">🆕</div>
+            <div class="benefit-text">
+              <h4>New Product Alerts</h4>
+              <p>Be the first to know about our latest herbal creations</p>
+            </div>
+          </div>
+
+          <div class="benefit-item">
+            <div class="benefit-icon">📚</div>
+            <div class="benefit-text">
+              <h4>Herbal Knowledge</h4>
+              <p>Learn about the benefits of natural ingredients</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discount Code -->
+        <% if (typeof discountCode !== 'undefined' && discountCode) { %>
+        <div class="discount-box">
+          <h3>Your Welcome Gift</h3>
+          <div class="discount-code">
+            <span><%= discountCode %></span>
+          </div>
+          <p>
+            Use this code for
+            <strong><%= discountPercent || '10' %>% OFF</strong> your first
+            order!
+          </p>
+          <p style="font-size: 11px; margin-top: 8px">
+            Valid for 30 days from today
+          </p>
+        </div>
+        <% } %>
+
+        <!-- CTA Button -->
+        <a
+          href="<%= shopUrl || 'https://your-domain.com/shop' %>"
+          class="button"
+        >
+          Start Shopping
+        </a>
+
+        <!-- Social Links -->
+        <div class="social-section">
+          <p class="social-title">Follow us for daily inspiration</p>
+          <div class="social-icons">
+            <% if (typeof facebookUrl !== 'undefined' && facebookUrl) { %>
+            <a href="<%= facebookUrl %>" class="social-icon">
+              <img
+                src="https://cdn-icons-png.flaticon.com/24/733/733547.png"
+                alt="Facebook"
+                width="20"
+                height="20"
+              />
+            </a>
+            <% } %> <% if (typeof instagramUrl !== 'undefined' && instagramUrl)
+            { %>
+            <a href="<%= instagramUrl %>" class="social-icon">
+              <img
+                src="https://cdn-icons-png.flaticon.com/24/2111/2111463.png"
+                alt="Instagram"
+                width="20"
+                height="20"
+              />
+            </a>
+            <% } %> <% if (typeof twitterUrl !== 'undefined' && twitterUrl) { %>
+            <a href="<%= twitterUrl %>" class="social-icon">
+              <img
+                src="https://cdn-icons-png.flaticon.com/24/733/733579.png"
+                alt="Twitter"
+                width="20"
+                height="20"
+              />
+            </a>
+            <% } %> <% if (typeof whatsappUrl !== 'undefined' && whatsappUrl) {
+            %>
+            <a href="<%= whatsappUrl %>" class="social-icon">
+              <img
+                src="https://cdn-icons-png.flaticon.com/24/733/733585.png"
+                alt="WhatsApp"
+                width="20"
+                height="20"
+              />
+            </a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          You're receiving this email because you subscribed to our newsletter
+          at
+          <a href="<%= websiteUrl || 'https://your-domain.com' %>"
+            >Herbal Khana</a
+          >.
+        </p>
+
+        <div class="unsubscribe">
+          Don't want to receive these emails?
+          <a href="<%= unsubscribeUrl %>">Unsubscribe here</a>
+        </div>
+
+        <p style="margin-top: 15px">
+          &copy; <%= new Date().getFullYear() %> Herbal Khana. All rights
+          reserved.
+          <br />
+          Lahore, Pakistan
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

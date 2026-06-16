@@ -4,7 +4,6 @@ import { OrderSummaryProps } from "@/types/order";
 import { formatDate } from "@/utils/FormatDate";
 import {
   Calendar,
-  CheckCircle,
   Clock,
   Copy,
   ExternalLink,
@@ -14,9 +13,17 @@ import {
 import StatusBadge from "./StatusBadge";
 
 export default function OrderSummary({ order }: OrderSummaryProps) {
-  const [copied, copy] = useCopyToClipboard();
+  const { copy } = useCopyToClipboard();
   const [ref, isVisible] = useIntersectionObserver();
 
+  // Some orders might have no carrier info; fallback to "N/A"
+  const carrierName = (order.shippingMethod?.name as string) || "N/A";
+  const carrierUrl = (order.shippingMethod?.name as string) || null;
+  const copyOrderId = () => {
+    if (order) {
+      copy(order.orderId);
+    }
+  };
   return (
     <div
       ref={ref}
@@ -33,15 +40,11 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{order.orderId}</h2>
               <button
-                onClick={() => copy(order.orderId)}
+                onClick={copyOrderId}
                 className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
                 title="Copy Order ID"
               >
-                {copied ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <Copy className="w-5 h-5" />
-                )}
+                <Copy className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -60,24 +63,27 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             {formatDate(order.orderDate)}
           </p>
         </div>
+
         <div>
           <p className="text-sm text-stone-500 mb-1 flex items-center gap-1">
             <Clock className="w-4 h-4" />
             Est. Delivery
           </p>
           <p className="font-semibold text-stone-800">
-            {formatDate(order.estimatedDelivery)}
+            {order?.estimatedDelivery
+              ? formatDate(order.estimatedDelivery)
+              : "N/A"}
           </p>
         </div>
+
         <div>
           <p className="text-sm text-stone-500 mb-1 flex items-center gap-1">
             <Truck className="w-4 h-4" />
             Carrier
           </p>
-          <p className="font-semibold text-stone-800">
-            {order.carrier || "N/A"}
-          </p>
+          <p className="font-semibold text-stone-800">{carrierName}</p>
         </div>
+
         <div>
           <p className="text-sm text-stone-500 mb-1 flex items-center gap-1">
             <Package className="w-4 h-4" />
@@ -87,9 +93,9 @@ export default function OrderSummary({ order }: OrderSummaryProps) {
             <p className="font-semibold text-stone-800">
               {order.trackingNumber || "N/A"}
             </p>
-            {order.carrierUrl && (
+            {carrierUrl && (
               <a
-                href={order.carrierUrl}
+                href={carrierUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1 text-[#DDA200] hover:bg-[#DDA200]/10 rounded"

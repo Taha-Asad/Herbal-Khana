@@ -40,10 +40,15 @@
 /* ===========================
    Base Styles
 =========================== */
+html {
+  scrollbar-gutter: stable;
+}
 body {
   @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans;
   font-size: var(--font-size);
   scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ===========================
@@ -109,4 +114,16 @@ label {
 
 .hover-underline:hover::after {
   width: 100%;
+}
+@keyframes scaleDown {
+  from {
+    transform: scale(1.25);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-scale-down {
+  animation: scaleDown 300ms ease-out forwards;
 }

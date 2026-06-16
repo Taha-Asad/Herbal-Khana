@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import BlogsCard from "@/components/ui/BlogsCard";
-import { blogPosts } from "@/lib/blog";
+import { blogPosts } from "@/lib/dummyData/blog";
 import BlogFilter from "./BlogFilter";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "./ClearFilters";

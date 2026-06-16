@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
+  compiler:
+    process.env.NODE_ENV === "production" ? { removeConsole: true } : {},
+  compress: true,
+  reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
@@ -12,6 +20,18 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "picsum.photos",
+      },
+      {
+        protocol: "https",
+        hostname: "46avwlzt0a.ufs.sh",
+      },
+      {
+        protocol: "https",
+        hostname: "*utfs.io",
+      },
+      {
+        protocol: "https",
+        hostname: "*.ufs.sh",
       },
     ],
   },

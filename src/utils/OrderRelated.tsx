@@ -3,7 +3,6 @@ import {
   CheckCircle,
   Clock,
   Home,
-  Navigation,
   Package,
   RefreshCw,
   Truck,
@@ -17,28 +16,26 @@ const formatCurrency = (amount: number): string => {
 
 const getStatusColor = (status: OrderStatus): string => {
   const colors: Record<OrderStatus, string> = {
-    pending: "#6B7280",
-    confirmed: "#3B82F6",
-    processing: "#8B5CF6",
-    shipped: "#DDA200",
-    out_for_delivery: "#F59E0B",
-    delivered: "#10B981",
-    cancelled: "#EF4444",
-    returned: "#6366F1",
+    PENDING: "#6B7280",
+    PAID: "#3B82F6",
+    PROCESSING: "#8B5CF6",
+    SHIPPED: "#DDA200",
+    DELIVERED: "#10B981",
+    CANCELLED: "#EF4444",
+    REFUNDED: "#6366F1",
   };
   return colors[status] || "#6B7280";
 };
 
 const getStatusIcon = (status: OrderStatus): React.ElementType => {
   const icons: Record<OrderStatus, React.ElementType> = {
-    pending: Clock,
-    confirmed: CheckCircle,
-    processing: Warehouse,
-    shipped: Truck,
-    out_for_delivery: Navigation,
-    delivered: Home,
-    cancelled: XCircle,
-    returned: RefreshCw,
+    PENDING: Clock,
+    PAID: CheckCircle,
+    PROCESSING: Warehouse,
+    SHIPPED: Truck,
+    DELIVERED: Home,
+    CANCELLED: XCircle,
+    REFUNDED: RefreshCw,
   };
   return icons[status] || Package;
 };
