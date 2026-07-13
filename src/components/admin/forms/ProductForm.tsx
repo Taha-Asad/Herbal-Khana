@@ -753,7 +753,7 @@ export default function ProductForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2.5 from-amber-500 to-amber-600 text-white 
+          className="px-6 py-2.5 bg-linear-to-r from-amber-500 to-amber-600 text-white 
             font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all 
             disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-amber-500/30"
         >
