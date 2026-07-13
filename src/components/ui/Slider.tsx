@@ -31,7 +31,7 @@ function Slider() {
                 src={img}
                 alt={`Hero Image ${idx + 1}`}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                unoptimized
                 className="object-cover"
                 priority
               />
