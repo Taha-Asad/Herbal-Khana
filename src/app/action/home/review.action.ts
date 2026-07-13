@@ -723,7 +723,7 @@ export async function getUserReviews(
             id: review.product.id,
             name: review.product.name,
             slug: review.product.slug,
-            image: review.product.images[0]?.url || "/placeholder-product.jpg",
+            image: review.product.images[0]?.url || "/placeholder.svg",
           },
         };
       })

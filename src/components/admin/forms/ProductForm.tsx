@@ -21,7 +21,7 @@ interface ProductFormProps {
   initialData?: ProductFormData;
   categories: Category[];
   onSubmit: (
-    data: ProductFormData
+    data: ProductFormData,
   ) => Promise<{ success: boolean; error?: string }>;
   isLoading?: boolean;
 }
@@ -61,7 +61,7 @@ export default function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<ProductFormData>(
-    initialData || defaultFormData
+    initialData || defaultFormData,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<
@@ -78,7 +78,7 @@ export default function ProductForm({
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -105,12 +105,12 @@ export default function ProductForm({
   const handleVariantChange = (
     index: number,
     field: keyof ProductVariant,
-    value: string | number
+    value: string | number,
   ) => {
     setFormData((prev) => ({
       ...prev,
       variants: prev.variants.map((v, i) =>
-        i === index ? { ...v, [field]: value } : v
+        i === index ? { ...v, [field]: value } : v,
       ),
     }));
   };
@@ -497,7 +497,7 @@ export default function ProductForm({
                           handleVariantChange(
                             index,
                             "price",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm
@@ -518,7 +518,7 @@ export default function ProductForm({
                           handleVariantChange(
                             index,
                             "stock",
-                            parseInt(e.target.value) || 0
+                            parseInt(e.target.value) || 0,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm
@@ -538,7 +538,7 @@ export default function ProductForm({
                           handleVariantChange(
                             index,
                             "lowStockThreshold",
-                            parseInt(e.target.value) || 5
+                            parseInt(e.target.value) || 5,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm
@@ -574,7 +574,7 @@ export default function ProductForm({
                           handleVariantChange(
                             index,
                             "concentration",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm
@@ -638,7 +638,7 @@ export default function ProductForm({
                     >
                       <div className="aspect-square bg-gray-100">
                         <Image
-                          src={image.url || "../../../public/placeholder.png"}
+                          src={image.url || "/placeholder.svg"}
                           alt={image.alt || "Product image"}
                           width={500}
                           height={500}
@@ -753,7 +753,7 @@ export default function ProductForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white 
+          className="px-6 py-2.5 from-amber-500 to-amber-600 text-white 
             font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all 
             disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-amber-500/30"
         >

@@ -9,15 +9,18 @@ async function Hero() {
     <div className="relative w-full min-h-[calc(100vh-80px)] overflow-hidden py-5 my-25">
       {/* Background Image */}
       <div
-        className="absolute inset-0 w-full h-full bg-cover bg-center blur-[8px] brightness-80"
-        style={{ backgroundImage: "url('/heroback.jpg')" }}
+        className="absolute inset-0 w-full h-full bg-cover bg-center blur-sm brightness-80"
+        style={{
+          backgroundImage: "url('/IMG_7771.PNG')",
+          transform: "scaleX(-1)",
+        }}
       />
 
       {/* Left gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-r from-black/30 via-transparent to-transparent" />
 
       {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-[length:40px_40px]" />
+      <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] bg-size-[40px_40px]" />
 
       {/* Content */}
       <div className="relative z-10 grid lg:grid-cols-2 grid-cols-1 h-full px-5 py-5 gap-8">
@@ -55,7 +58,7 @@ async function Hero() {
       </div>
 
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#FEFCDF] to-transparent z-5" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-[#FEFCDF] to-transparent z-5" />
     </div>
   );
 }

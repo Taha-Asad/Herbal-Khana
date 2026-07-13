@@ -19,7 +19,7 @@ import { utapi } from "@/utils/uploadThing";
 /* -------------------------------------------------------------------------- */
 
 export async function uploadImageFromFile(
-  file?: File | null
+  file?: File | null,
 ): Promise<string | null> {
   if (!file || file.size === 0) return null;
 
@@ -37,7 +37,7 @@ export async function uploadImageFromFile(
 /* -------------------------------------------------------------------------- */
 
 export async function getProducts(
-  filters: QueryFilters = {}
+  filters: QueryFilters = {},
 ): Promise<ActionResponse<PaginatedData<ProductListItem>>> {
   try {
     await requireAdmin();
@@ -98,7 +98,7 @@ export async function getProducts(
       const prices = p.productVariants.map((v) => Number(v.price));
       const stocks = p.productVariants.map((v) => v.stock);
       const isLowStock = p.productVariants.some(
-        (v) => v.stock > 0 && v.stock <= v.lowStockThreshold
+        (v) => v.stock > 0 && v.stock <= v.lowStockThreshold,
       );
 
       return {
@@ -200,10 +200,49 @@ export async function getProduct(id: string): Promise<ActionResponse<Product>> {
 /* -------------------------------------------------------------------------- */
 
 export async function createProduct(
-  data: ProductFormData
+  data: ProductFormData,
 ): Promise<ActionResponse<{ id: string }>> {
   try {
     await requireAdmin();
+
+    const existingSlug = await prisma.product.findUnique({
+      where: { slug: data.slug },
+      select: { id: true },
+    });
+    if (existingSlug) {
+      return { success: false, error: "A product with this slug already exists" };
+    }
+
+    const existingSku = await prisma.product.findUnique({
+      where: { sku: data.sku },
+      select: { id: true },
+    });
+    if (existingSku) {
+      return { success: false, error: "A product with this SKU already exists" };
+    }
+
+    /* ------------------------------- UPLOAD IMAGES -------------------------- */
+
+    const resolvedImages: { url: string; alt: string | null | undefined; sortOrder: number; isPrimary: boolean }[] = [];
+    for (let i = 0; i < data.images.length; i++) {
+      const img = data.images[i];
+      let imageUrl: string | null = null;
+
+      if (img.file) {
+        imageUrl = await uploadImageFromFile(img.file);
+      } else {
+        imageUrl = img.url ?? null;
+      }
+
+      if (!imageUrl) continue;
+
+      resolvedImages.push({
+        url: imageUrl,
+        alt: img.alt,
+        sortOrder: img.sortOrder ?? i,
+        isPrimary: img.isPrimary ?? i === 0,
+      });
+    }
 
     const product = await prisma.$transaction(async (tx) => {
       const newProduct = await tx.product.create({
@@ -224,31 +263,13 @@ export async function createProduct(
 
       /* ------------------------------- IMAGES -------------------------------- */
 
-      if (data.images.length > 0) {
-        const images = [];
-
-        for (let i = 0; i < data.images.length; i++) {
-          const img = data.images[i];
-          let imageUrl = img.url ?? null;
-
-          if (!imageUrl && img.file) {
-            imageUrl = await uploadImageFromFile(img.file);
-          }
-
-          if (!imageUrl) continue;
-
-          images.push({
+      if (resolvedImages.length > 0) {
+        await tx.productImage.createMany({
+          data: resolvedImages.map((img) => ({
             productId: newProduct.id,
-            url: imageUrl,
-            alt: img.alt,
-            sortOrder: img.sortOrder ?? i,
-            isPrimary: img.isPrimary ?? i === 0,
-          });
-        }
-
-        if (images.length > 0) {
-          await tx.productImage.createMany({ data: images });
-        }
+            ...img,
+          })),
+        });
       }
 
       /* ------------------------------ VARIANTS ------------------------------- */
@@ -291,10 +312,49 @@ export async function createProduct(
 
 export async function updateProduct(
   id: string,
-  data: ProductFormData
+  data: ProductFormData,
 ): Promise<ActionResponse> {
   try {
     await requireAdmin();
+
+    const existingSlug = await prisma.product.findFirst({
+      where: { slug: data.slug, id: { not: id } },
+      select: { id: true },
+    });
+    if (existingSlug) {
+      return { success: false, error: "A product with this slug already exists" };
+    }
+
+    const existingSku = await prisma.product.findFirst({
+      where: { sku: data.sku, id: { not: id } },
+      select: { id: true },
+    });
+    if (existingSku) {
+      return { success: false, error: "A product with this SKU already exists" };
+    }
+
+    /* ------------------------------- UPLOAD IMAGES -------------------------- */
+
+    const resolvedImages: { url: string; alt: string | null | undefined; sortOrder: number; isPrimary: boolean }[] = [];
+    for (let i = 0; i < data.images.length; i++) {
+      const img = data.images[i];
+      let imageUrl: string | null = null;
+
+      if (img.file) {
+        imageUrl = await uploadImageFromFile(img.file);
+      } else {
+        imageUrl = img.url ?? null;
+      }
+
+      if (!imageUrl) continue;
+
+      resolvedImages.push({
+        url: imageUrl,
+        alt: img.alt,
+        sortOrder: img.sortOrder ?? i,
+        isPrimary: img.isPrimary ?? i === 0,
+      });
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
@@ -316,31 +376,13 @@ export async function updateProduct(
 
       await tx.productImage.deleteMany({ where: { productId: id } });
 
-      if (data.images.length > 0) {
-        const images = [];
-
-        for (let i = 0; i < data.images.length; i++) {
-          const img = data.images[i];
-          let imageUrl = img.url ?? null;
-
-          if (!imageUrl && img.file) {
-            imageUrl = await uploadImageFromFile(img.file);
-          }
-
-          if (!imageUrl) continue;
-
-          images.push({
+      if (resolvedImages.length > 0) {
+        await tx.productImage.createMany({
+          data: resolvedImages.map((img) => ({
             productId: id,
-            url: imageUrl,
-            alt: img.alt,
-            sortOrder: img.sortOrder ?? i,
-            isPrimary: img.isPrimary ?? i === 0,
-          });
-        }
-
-        if (images.length > 0) {
-          await tx.productImage.createMany({ data: images });
-        }
+            ...img,
+          })),
+        });
       }
 
       await tx.productVariant.deleteMany({ where: { productId: id } });
@@ -376,19 +418,27 @@ export async function deleteProduct(id: string): Promise<ActionResponse> {
   try {
     await requireAdmin();
 
-    await prisma.product.delete({ where: { id } });
+    // Soft-delete: set inactive so cart items still reference the variant
+    // Cart UI will detect this and show "no longer available"
+    await prisma.product.update({
+      where: { id },
+      data: { isActive: false },
+    });
 
     revalidatePath("/admin/products");
     return { success: true, message: "Product deleted successfully" };
   } catch (error) {
     console.error("deleteProduct error:", error);
-    return { success: false, error: "Failed to delete product" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
 export async function toggleProductStatus(
   id: string,
-  isActive: boolean
+  isActive: boolean,
 ): Promise<ActionResponse> {
   try {
     await requireAdmin();
@@ -408,7 +458,7 @@ export async function toggleProductStatus(
 
 export async function toggleProductFeatured(
   id: string,
-  isFeatured: boolean
+  isFeatured: boolean,
 ): Promise<ActionResponse> {
   try {
     await requireAdmin();
@@ -428,7 +478,7 @@ export async function toggleProductFeatured(
 
 export async function updateProductStock(
   variantId: string,
-  stock: number
+  stock: number,
 ): Promise<ActionResponse> {
   try {
     await requireAdmin();

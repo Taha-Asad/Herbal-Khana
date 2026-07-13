@@ -293,6 +293,7 @@ function mapCartItems(
       product: {
         name: string;
         slug: string;
+        isActive: boolean;
         costPrice: unknown;
         images: Array<{ url: string; isPrimary: boolean }>;
       };
@@ -300,6 +301,7 @@ function mapCartItems(
   }>
 ): CartItem[] {
   return items.map((item) => {
+    const unavailable = !item.variant.product.isActive;
     const primaryImage = item.variant.product.images.find((i) => i.isPrimary);
     const firstImage = item.variant.product.images[0];
 
@@ -318,9 +320,10 @@ function mapCartItems(
       variantName: item.variant.name,
       size: item.variant.size,
       scent: item.variant.scent,
-      image: primaryImage?.url || firstImage?.url || "/images/placeholder.png",
+      image: primaryImage?.url || firstImage?.url || "/placeholder.svg",
       stock: item.variant.stock,
       sku: item.variant.sku,
+      unavailable,
     };
   });
 }
@@ -658,9 +661,10 @@ export async function getCartForUI(): Promise<CartResult> {
     const savedItems = itemsFromDb.filter((item) => item.isSavedForLater);
 
     const items = mapCartItems(activeItems);
+    const availableItems = items.filter((item) => !item.unavailable);
     const savedItemsMapped = mapCartItems(savedItems);
 
-    const subtotal = calculateSubtotal(items);
+    const subtotal = calculateSubtotal(availableItems);
     const shippingCost = getShippingCost(cart.selectedShippingId, subtotal);
 
     // Get promo code details
@@ -810,7 +814,7 @@ export async function getRecommendedProducts(): Promise<{
           id: product.id,
           name: product.name,
           slug: product.slug,
-          image: product.images[0]?.url || "/images/placeholder.png",
+          image: product.images[0]?.url || "/placeholder.svg",
           price: variantPrice,
           originalPrice:
             costPrice && costPrice > variantPrice ? costPrice : undefined,

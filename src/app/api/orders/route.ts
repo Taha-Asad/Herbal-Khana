@@ -99,19 +99,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate stock availability
-    for (const item of cart.items) {
-      if (item.variant.stock < item.quantity) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `Insufficient stock for ${item.variant.product.name} - ${item.variant.name}. Only ${item.variant.stock} available.`,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     // Get or validate shipping address
     let finalShippingAddress;
     if (shippingAddressId) {
@@ -199,8 +186,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Filter out unavailable items
+    const activeCartItems = cart.items.filter(
+      (item) => item.variant.product.isActive
+    );
+
+    if (activeCartItems.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "All items in your cart are no longer available" },
+        { status: 400 }
+      );
+    }
+
+    // Validate stock availability (active items only)
+    for (const item of activeCartItems) {
+      if (item.variant.stock < item.quantity) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Insufficient stock for ${item.variant.product.name} - ${item.variant.name}. Only ${item.variant.stock} available.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Calculate totals
-    const subtotal = cart.items.reduce(
+    const subtotal = activeCartItems.reduce(
       (sum, item) => sum + Number(item.variant.price) * item.quantity,
       0
     );
@@ -330,8 +342,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create order items
-      for (const item of cart.items) {
+      // Create order items (active items only)
+      for (const item of activeCartItems) {
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,

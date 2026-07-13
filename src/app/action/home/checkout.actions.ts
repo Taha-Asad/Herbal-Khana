@@ -75,19 +75,25 @@ export async function getCheckoutData(): Promise<{
       return { success: false, error: "Your cart is empty" };
     }
 
-    // Transform cart items
-    const items: CheckoutItem[] = cart.items.map((item) => ({
-      variantId: item.variantId,
-      productId: item.variant.productId,
-      name: item.variant.product.name,
-      variantName: item.variant.name,
-      sku: item.variant.sku,
-      image: item.variant.product.images[0]?.url || null,
-      price: Number(item.variant.price),
-      quantity: item.quantity,
-      subtotal: Number(item.variant.price) * item.quantity,
-      stock: item.variant.stock,
-    }));
+    // Transform cart items (exclude unavailable products)
+    const items: CheckoutItem[] = cart.items
+      .filter((item) => item.variant.product.isActive)
+      .map((item) => ({
+        variantId: item.variantId,
+        productId: item.variant.productId,
+        name: item.variant.product.name,
+        variantName: item.variant.name,
+        sku: item.variant.sku,
+        image: item.variant.product.images[0]?.url || null,
+        price: Number(item.variant.price),
+        quantity: item.quantity,
+        subtotal: Number(item.variant.price) * item.quantity,
+        stock: item.variant.stock,
+      }));
+
+    if (items.length === 0) {
+      return { success: false, error: "All items in your cart are no longer available" };
+    }
 
     // Calculate subtotal
     const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);

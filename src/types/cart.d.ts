@@ -11,6 +11,8 @@ export interface CartItem {
   image?: string;
   stock: number;
   sku: string;
+  slug: string;
+  unavailable?: boolean;
 }
 
 export interface CartSummary {
@@ -58,6 +60,8 @@ export type ServerCartItem = {
   stock: number;
   size: string;
   scent?: string | null | undefined;
+  slug?: string;
+  unavailable?: boolean;
 };
 
 interface UICartItem {
@@ -76,6 +80,7 @@ interface UICartItem {
   stockCount?: number;
   estimatedDelivery?: string;
   isSavedForLater: boolean;
+  unavailable?: boolean;
   variant?: {
     size?: string;
     color?: string;

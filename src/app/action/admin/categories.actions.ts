@@ -268,16 +268,8 @@ export async function deleteCategory(id: string): Promise<ActionResponse> {
       return { success: false, error: "Category not found" };
     }
 
-    const productCount = category._count.products;
-
-    if (productCount > 0) {
-      const productText = productCount === 1 ? "product" : "products";
-      return {
-        success: false,
-        error: `Cannot delete category with ${productCount} ${productText}. Please reassign or delete products first.`,
-      };
-    }
-
+    // Safe to delete — schema has onDelete: SetNull on Product.categoryId,
+    // so products become uncategorized automatically
     await prisma.category.delete({ where: { id } });
 
     revalidatePath("/admin/categories");
