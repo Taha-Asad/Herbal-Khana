@@ -6,22 +6,18 @@ const beforeAfterData = [
   {
     id: 1,
     title: "Hair Growth Transformation",
-    before:
-      "https://images.unsplash.com/photo-1747324831504-5ee9aa8eec59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGdsb3dpbmclMjBza2luJTIwbmF0dXJhbHxlbnwxfHx8fDE3NjI3OTA4MDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    after:
-      "https://images.unsplash.com/photo-1729337531424-198f880cb6c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb3V0aCUyMGFzaWFuJTIwd29tYW4lMjBza2luY2FyZXxlbnwxfHx8fDE3NjI3OTA4MDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    duration: "8 weeks",
-    product: "Herbal Hair Growth Oil",
+    before: "/before-1.jpg",
+    after: "/after-1.jpg",
+    duration: "8 Weeks",
+    product: "Herbal Nourishing Oil",
   },
   {
     id: 2,
-    title: "Radiant Skin Results",
-    before:
-      "https://images.unsplash.com/photo-1729337531424-198f880cb6c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb3V0aCUyMGFzaWFuJTIwd29tYW4lMjBza2luY2FyZXxlbnwxfHx8fDE3NjI3OTA4MDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    after:
-      "https://images.unsplash.com/photo-1747324831504-5ee9aa8eec59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMGdsb3dpbmclMjBza2luJTIwbmF0dXJhbHxlbnwxfHx8fDE3NjI3OTA4MDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    duration: "6 weeks",
-    product: "Natural Glow Face Cream",
+    title: "Repair & Shine Results",
+    before: "/before-2.jpg",
+    after: "/after-2.jpg",
+    duration: "6 Weeks",
+    product: "Herbal Nourishing Shampoo",
   },
 ];
 function Transformations() {
@@ -32,27 +28,27 @@ function Transformations() {
 
   const handlePrevious = () => {
     setCurrentIndex((prev) =>
-      prev === 0 ? beforeAfterData.length - 1 : prev - 1
+      prev === 0 ? beforeAfterData.length - 1 : prev - 1,
     );
     setSliderPosition(50);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) =>
-      prev === beforeAfterData.length - 1 ? 0 : prev + 1
+      prev === beforeAfterData.length - 1 ? 0 : prev + 1,
     );
     setSliderPosition(50);
   };
 
   return (
-    <div className="relative my-10 bg-gradient-to-br from-white via-[#FFF8E1] to-white py-20 overflow-hidden">
+    <div className="relative my-10 bg-linear-to-br from-white via-[#FFF8E1] to-white py-20 overflow-hidden">
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-0 w-96 h-96 bg-[#DDA200]/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-[#DDA200]/20 rounded-full blur-3xl" />
       </div>
       <div className="container mx-auto">
         <div className="flex flex-col items-center">
-          <div className="rounded-full border-1 border border-[#DDA200] text-[#DDA200] bg-[#FEFCDF] w-auto py-2 px-4 my-3">
+          <div className="rounded-full border-[#DDA200] text-[#DDA200] bg-[#FEFCDF] w-auto py-2 px-4 my-3">
             <span>Transformations</span>
           </div>
           <h2 className="text-4xl text-center py-3">
@@ -64,7 +60,7 @@ function Transformations() {
           </p>{" "}
         </div>
         <div className="max-w-4xl mx-auto py-5">
-          <div className="bg-gradient-to-br from-[#FEFCDF] to-white rounded-[2rem] p-8 shadow-2xl border border-white/50">
+          <div className="bg-linear-to-br from-[#FEFCDF] to-white rounded-4xl p-8 shadow-2xl border border-white/50">
             <div className="mb-6 text-center">
               <h3 className="text-black mb-2">{current.title}</h3>
               <div className="inline-flex items-center gap-2 bg-[#DDA200]/10 px-4 py-2 rounded-full">
@@ -76,13 +72,14 @@ function Transformations() {
             </div>
 
             {/* Before/After Slider */}
-            <div className="relative h-[400px] rounded-2xl overflow-hidden mb-8">
+            <div className="relative h-100 rounded-2xl overflow-hidden mb-8">
               {/* After Image */}
               <Image
                 src={current.after}
                 alt="After"
                 fill
                 className="absolute inset-0 w-full h-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
               />
 
               {/* Before Image with clip */}
