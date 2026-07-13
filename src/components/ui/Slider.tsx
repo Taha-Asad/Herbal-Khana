@@ -1,14 +1,11 @@
 "use client";
 import React, { useEffect } from "react";
-import HeroImg1 from "../../../public/image1.jpeg";
-import HeroImg2 from "../../../public/image4.jpeg";
-import HeroImg3 from "../../../public/image7.jpeg";
 import useEmblaCarousel from "embla-carousel-react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 function Slider() {
   const [emblaRef, embla] = useEmblaCarousel({ loop: true });
-  const images = [HeroImg1, HeroImg2, HeroImg3];
+  const images = ["/IMG_7769.PNG", "/IMG_7770.PNG"];
 
   useEffect(() => {
     if (!embla) return;
@@ -34,6 +31,7 @@ function Slider() {
                 src={img}
                 alt={`Hero Image ${idx + 1}`}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
                 priority
               />
