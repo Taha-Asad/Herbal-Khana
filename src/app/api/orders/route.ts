@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ORDER_STATUS, Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { isCodAccount, PAYMENT_ACCOUNTS } from "@/lib/payment-config";
+import { getTaxRate } from "@/lib/order-helpers";
 
 import { getServerAuthSession } from "@/app/action/home/user.action";
 import prisma from "@/lib/prisma";
@@ -303,7 +304,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const tax = 0; // Usually 0 in Pakistan for most products
+    const taxRate = await getTaxRate();
+    const taxableAmount = Math.max(0, subtotal - promoDiscount);
+    const tax = Math.round(taxableAmount * taxRate * 100) / 100;
 
     // Calculate product discount from costPrice vs selling price
     const productDiscount = activeCartItems.reduce((sum, item) => {

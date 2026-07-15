@@ -1,5 +1,6 @@
 import { ORDER_STATUS } from "@prisma/client";
 import { DisplayAddress, StoredAddress, TrackingEvent } from "@/types/order";
+import prisma from "./prisma";
 
 export const STATUS_STEPS: Record<ORDER_STATUS, number> = {
   PENDING: 1,
@@ -57,4 +58,11 @@ export function formatTrackingHistory(
     isCompleted: index < timeline.length - 1 || currentStatus === "DELIVERED",
     isCurrent: index === timeline.length - 1 && currentStatus !== "DELIVERED",
   }));
+}
+
+export async function getTaxRate(): Promise<number> {
+  const setting = await prisma.setting.findUnique({ where: { key: "taxRate" } });
+  if (!setting) return 0;
+  const rate = Number(setting.value);
+  return isNaN(rate) ? 0 : rate;
 }

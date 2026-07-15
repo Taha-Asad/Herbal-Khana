@@ -117,6 +117,7 @@ export default function EditProductPage() {
     sku: product.sku,
     description: product.description,
     shortDescription: product.shortDescription,
+    costPrice: product.costPrice,
     isActive: product.isActive,
     isFeatured: product.isFeatured,
     isNew: product.isNew,

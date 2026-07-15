@@ -12,6 +12,7 @@ import {
 } from "@/types/checkout";
 import prisma from "@/lib/prisma";
 import { getServerAuthSession } from "./user.action";
+import { getTaxRate } from "@/lib/order-helpers";
 
 // Get checkout data for a user's cart
 export async function getCheckoutData(): Promise<{
@@ -168,13 +169,17 @@ export async function getCheckoutData(): Promise<{
       }
     }
 
+    const taxRate = await getTaxRate();
+    const taxableAmount = Math.max(0, subtotal - promoDiscount);
+    const tax = Math.round(taxableAmount * taxRate * 100) / 100;
+
     const summary: CheckoutSummary = {
       subtotal,
       shippingCost,
-      tax: 0,
+      tax,
       discount: 0,
       promoDiscount,
-      total: subtotal + shippingCost - promoDiscount,
+      total: subtotal + shippingCost + tax - promoDiscount,
       appliedPromoCode,
     };
 

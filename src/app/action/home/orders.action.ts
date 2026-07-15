@@ -26,6 +26,7 @@ import {
 } from "@/lib/email/order-emails";
 import { Prisma } from "@prisma/client";
 import { TrackingData } from "@/types/order";
+import { getTaxRate } from "@/lib/order-helpers";
 
 // Generate unique order number
 function generateOrderNumber(): string {
@@ -231,7 +232,9 @@ export async function createOrder(
       }
     }
 
-    const tax = 0; // Usually 0 in Pakistan for most products
+    const taxRate = await getTaxRate();
+    const taxableAmount = Math.max(0, subtotal - promoDiscount);
+    const tax = Math.round(taxableAmount * taxRate * 100) / 100;
     const total = subtotal + shippingCost + tax - promoDiscount;
     const shippingAddressJson: Prisma.JsonValue | typeof Prisma.JsonNull =
       shippingAddress

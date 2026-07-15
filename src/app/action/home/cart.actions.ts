@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { getTaxRate } from "@/lib/order-helpers";
 import type {
   CartItem,
   CartResult,
@@ -18,7 +19,6 @@ import type {
 
 const SESSION_COOKIE_NAME = "cart_session_id";
 const SESSION_EXPIRY_DAYS = 30;
-const TAX_RATE = 0.05;
 const FREE_SHIPPING_THRESHOLD = 5000;
 
 const SHIPPING_PRICES: Record<string, number> = {
@@ -251,7 +251,8 @@ function calculatePromoDiscount(
 function calculateCartSummary(
   items: CartItem[],
   shippingCost: number,
-  promoDiscount: number
+  promoDiscount: number,
+  taxRate: number
 ): CartSummary {
   const subtotal = calculateSubtotal(items);
 
@@ -263,7 +264,7 @@ function calculateCartSummary(
   }, 0);
 
   const taxableAmount = Math.max(0, subtotal - promoDiscount);
-  const tax = Math.round(taxableAmount * TAX_RATE);
+  const tax = Math.round(taxableAmount * taxRate * 100) / 100;
   const total = Math.max(0, subtotal + shippingCost + tax - promoDiscount);
 
   return {
@@ -711,7 +712,8 @@ export async function getCartForUI(): Promise<CartResult> {
       }
     }
 
-    const summary = calculateCartSummary(items, shippingCost, promoDiscount);
+    const taxRate = await getTaxRate();
+    const summary = calculateCartSummary(items, shippingCost, promoDiscount, taxRate);
 
     return {
       success: true,

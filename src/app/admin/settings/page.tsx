@@ -38,6 +38,7 @@ export default function SettingsPage() {
     storePhone: "",
     storeAddress: "",
     currency: "PKR",
+    taxRate: 0,
     lowStockThreshold: 5,
   });
 
@@ -274,6 +275,29 @@ export default function SettingsPage() {
                   }
                   className="w-32 px-4 py-2.5 border rounded-xl"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Tax Rate (%)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={storeSettings.taxRate * 100}
+                  onChange={(e) =>
+                    setStoreSettings({
+                      ...storeSettings,
+                      taxRate: Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100,
+                    })
+                  }
+                  className="w-32 px-4 py-2.5 border rounded-xl"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Applied as a percentage on taxable amount. Set to 0 for no tax.
+                </p>
               </div>
 
               <button
