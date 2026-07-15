@@ -41,6 +41,12 @@ export interface CartData {
   summary: CartSummary;
   appliedPromoCode: PromoCodeData | null;
   selectedShippingId: string | null;
+  deliverySettings: {
+    enableFreeDelivery: boolean;
+    freeDeliveryMinAmount: number;
+    deliveryPrice: number;
+    deliveryEstimate: string;
+  };
 }
 
 type CartResult =
@@ -152,15 +158,16 @@ interface PromoCodeInputProps {
 }
 
 interface ShippingOptionsProps {
-  selectedOption: string;
-  onSelect: (optionId: string) => void;
-  freeShippingThreshold: number;
+  deliveryPrice: number;
+  deliveryEstimate: string;
+  enableFreeDelivery: boolean;
+  freeDeliveryMinAmount: number;
   currentSubtotal: number;
 }
 
 interface OrderSummaryProps {
   summary: CartSummary;
-  selectedShipping: ShippingOption | undefined;
+  selectedShipping?: { name: string; price: number } | null;
   isCheckingOut: boolean;
   onCheckout: () => void;
   checkoutButton?: React.ReactNode; // add this

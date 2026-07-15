@@ -7,6 +7,7 @@ import {
   updateShippingMethod,
 } from "@/app/action/home/cart.actions";
 import type { CartSummary, PromoCodeData, UICartItem } from "@/types/cart";
+import type { DeliverySettings } from "@/app/action/home/cart.actions";
 import { transformCartItem } from "@/utils/cart/UtilityFunctions";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
@@ -20,6 +21,7 @@ export function useCart() {
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(
     null
   );
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const [isPending] = useTransition();
@@ -46,6 +48,9 @@ export function useCart() {
         setSummary(cartData.summary);
         setAppliedPromoCode(cartData.appliedPromoCode);
         setSelectedShippingId(cartData.selectedShippingId);
+        if (cartData.deliverySettings) {
+          setDeliverySettings(cartData.deliverySettings);
+        }
       }
     } catch (error) {
       console.error("Failed to load cart:", error);
@@ -214,6 +219,7 @@ export function useCart() {
     summary,
     appliedPromoCode,
     selectedShippingId,
+    deliverySettings,
     isLoading,
     updatingItems,
     isPending,

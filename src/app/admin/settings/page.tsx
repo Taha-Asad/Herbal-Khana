@@ -40,6 +40,10 @@ export default function SettingsPage() {
     currency: "PKR",
     taxRate: 0,
     lowStockThreshold: 5,
+    enableFreeDelivery: true,
+    freeDeliveryMinAmount: 5000,
+    deliveryPrice: 200,
+    deliveryEstimate: "5-7 business days",
   });
 
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -320,6 +324,135 @@ export default function SettingsPage() {
       {/* ---------------- Shipping Tab ---------------- */}
       {activeTab === "shipping" && (
         <>
+          {/* Delivery Configuration */}
+          <div className="bg-white rounded-xl border p-6">
+            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-amber-500" />
+              Delivery Configuration
+            </h3>
+
+            {loadingSettings ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              </div>
+            ) : (
+              <div className="space-y-6 max-w-2xl">
+                {/* Enable Free Delivery Toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Enable Free Delivery
+                    </label>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      When enabled, delivery is free above the minimum amount
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        enableFreeDelivery: !storeSettings.enableFreeDelivery,
+                      })
+                    }
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      storeSettings.enableFreeDelivery
+                        ? "bg-amber-500"
+                        : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        storeSettings.enableFreeDelivery
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Free Delivery Minimum Amount */}
+                {storeSettings.enableFreeDelivery && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Free Delivery Minimum Amount (PKR)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={storeSettings.freeDeliveryMinAmount}
+                      onChange={(e) =>
+                        setStoreSettings({
+                          ...storeSettings,
+                          freeDeliveryMinAmount: Number(e.target.value) || 0,
+                        })
+                      }
+                      className="w-48 px-4 py-2.5 border rounded-xl"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Orders above this amount get free delivery
+                    </p>
+                  </div>
+                )}
+
+                {/* Delivery Price */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Delivery Price (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={storeSettings.deliveryPrice}
+                    onChange={(e) =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        deliveryPrice: Number(e.target.value) || 0,
+                      })
+                    }
+                    className="w-48 px-4 py-2.5 border rounded-xl"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Standard delivery charge for all orders
+                  </p>
+                </div>
+
+                {/* Delivery Estimate */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Estimated Delivery Time
+                  </label>
+                  <input
+                    type="text"
+                    value={storeSettings.deliveryEstimate}
+                    onChange={(e) =>
+                      setStoreSettings({
+                        ...storeSettings,
+                        deliveryEstimate: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. 5-7 business days"
+                    className="w-64 px-4 py-2.5 border rounded-xl"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={savingSettings}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-amber-500 text-white rounded-xl"
+                >
+                  {savingSettings ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save Delivery Settings
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Shipping Methods */}
           <div className="flex justify-end">
             <button
               onClick={() => setShowShippingForm(true)}

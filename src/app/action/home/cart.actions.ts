@@ -19,13 +19,6 @@ import type {
 
 const SESSION_COOKIE_NAME = "cart_session_id";
 const SESSION_EXPIRY_DAYS = 30;
-const FREE_SHIPPING_THRESHOLD = 5000;
-
-const SHIPPING_PRICES: Record<string, number> = {
-  standard: 200,
-  express: 400,
-  overnight: 700,
-};
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -211,17 +204,52 @@ function calculateSubtotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
-function getShippingCost(
-  shippingId: string | null | undefined,
-  subtotal: number
-): number {
-  const id = shippingId || "standard";
+export interface DeliverySettings {
+  enableFreeDelivery: boolean;
+  freeDeliveryMinAmount: number;
+  deliveryPrice: number;
+  deliveryEstimate: string;
+}
 
-  if (id === "standard" && subtotal >= FREE_SHIPPING_THRESHOLD) {
+export async function getDeliverySettings(): Promise<DeliverySettings> {
+  try {
+    const settings = await prisma.setting.findMany({
+      where: {
+        key: {
+          in: ["enableFreeDelivery", "freeDeliveryMinAmount", "deliveryPrice", "deliveryEstimate"],
+        },
+      },
+    });
+
+    const map = new Map(settings.map((s) => [s.key, s.value]));
+
+    return {
+      enableFreeDelivery: (map.get("enableFreeDelivery") as boolean) ?? true,
+      freeDeliveryMinAmount: (map.get("freeDeliveryMinAmount") as number) ?? 5000,
+      deliveryPrice: (map.get("deliveryPrice") as number) ?? 200,
+      deliveryEstimate: (map.get("deliveryEstimate") as string) ?? "5-7 business days",
+    };
+  } catch (error) {
+    console.error("getDeliverySettings error:", error);
+    return {
+      enableFreeDelivery: true,
+      freeDeliveryMinAmount: 5000,
+      deliveryPrice: 200,
+      deliveryEstimate: "5-7 business days",
+    };
+  }
+}
+
+function calculateShippingCost(
+  subtotal: number,
+  deliveryPrice: number,
+  enableFreeDelivery: boolean,
+  freeDeliveryMinAmount: number
+): number {
+  if (enableFreeDelivery && subtotal >= freeDeliveryMinAmount) {
     return 0;
   }
-
-  return SHIPPING_PRICES[id] ?? SHIPPING_PRICES.standard;
+  return deliveryPrice;
 }
 
 function calculatePromoDiscount(
@@ -651,6 +679,7 @@ export async function getCartForUI(): Promise<CartResult> {
           summary: emptySummary,
           appliedPromoCode: null,
           selectedShippingId: null,
+          deliverySettings: await getDeliverySettings(),
         },
       };
     }
@@ -666,7 +695,14 @@ export async function getCartForUI(): Promise<CartResult> {
     const savedItemsMapped = mapCartItems(savedItems);
 
     const subtotal = calculateSubtotal(availableItems);
-    const shippingCost = getShippingCost(cart.selectedShippingId, subtotal);
+
+    const deliverySettings = await getDeliverySettings();
+    const shippingCost = calculateShippingCost(
+      subtotal,
+      deliverySettings.deliveryPrice,
+      deliverySettings.enableFreeDelivery,
+      deliverySettings.freeDeliveryMinAmount
+    );
 
     // Get promo code details
     let promoDiscount = 0;
@@ -724,6 +760,7 @@ export async function getCartForUI(): Promise<CartResult> {
         summary,
         appliedPromoCode,
         selectedShippingId: cart.selectedShippingId,
+        deliverySettings,
       },
     };
   } catch (error) {

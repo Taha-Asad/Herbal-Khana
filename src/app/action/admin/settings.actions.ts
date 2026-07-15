@@ -160,6 +160,10 @@ interface StoreSettings {
   enableGuestCheckout: boolean;
   lowStockThreshold: number;
   orderPrefix: string;
+  enableFreeDelivery: boolean;
+  freeDeliveryMinAmount: number;
+  deliveryPrice: number;
+  deliveryEstimate: string;
 }
 
 export async function getStoreSettings(): Promise<
@@ -190,6 +194,10 @@ export async function getStoreSettings(): Promise<
         enableGuestCheckout: getValue("enableGuestCheckout", false),
         lowStockThreshold: getValue("lowStockThreshold", 5),
         orderPrefix: getValue("orderPrefix", "ORD"),
+        enableFreeDelivery: getValue("enableFreeDelivery", true),
+        freeDeliveryMinAmount: getValue("freeDeliveryMinAmount", 5000),
+        deliveryPrice: getValue("deliveryPrice", 200),
+        deliveryEstimate: getValue("deliveryEstimate", "5-7 business days"),
       },
     };
   } catch (error) {

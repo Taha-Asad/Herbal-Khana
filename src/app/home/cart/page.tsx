@@ -17,7 +17,6 @@ import {
 import type { CartSummary, PromoCode } from "@/types/cart";
 import { usePromoCode } from "@/hooks/carthooks/usePromoCode";
 import useRecommendations from "@/hooks/carthooks/useRecommendations";
-import { shippingOptions } from "@/lib/dummyData/cart";
 import { transformPromoCode } from "@/utils/cart/UtilityFunctions";
 import { useCart } from "@/hooks/carthooks/useCart";
 import { CartLoadingSkeleton } from "@/components/ui/cart/CartLoadingSkeleton";
@@ -31,8 +30,6 @@ import { PromoCodeInput } from "@/components/ui/cart/PromoCodeInput";
 import { ShippingOptions } from "@/components/ui/cart/ShippingOptions";
 import { OrderSummary } from "@/components/ui/cart/OrderSummary";
 
-const FREE_SHIPPING_THRESHOLD = 5000;
-
 export default function CartPage() {
   const router = useRouter();
 
@@ -42,7 +39,7 @@ export default function CartPage() {
     savedItems,
     summary,
     appliedPromoCode,
-    selectedShippingId,
+    deliverySettings,
     isLoading,
     updatingItems,
     updateQuantity,
@@ -50,7 +47,6 @@ export default function CartPage() {
     saveForLater,
     moveToCart,
     clearCart,
-    updateShipping,
     refresh,
   } = useCart();
 
@@ -74,13 +70,6 @@ export default function CartPage() {
     if (!appliedPromoCode) return null;
     return transformPromoCode(appliedPromoCode);
   }, [appliedPromoCode]);
-
-  // Get selected shipping option
-  const selectedShipping = useMemo(() => {
-    return shippingOptions.find(
-      (opt) => opt.id === (selectedShippingId || "standard")
-    );
-  }, [selectedShippingId]);
 
   // Default summary if not loaded
   const displaySummary: CartSummary = summary || {
@@ -108,11 +97,6 @@ export default function CartPage() {
     if (success) {
       await refresh();
     }
-  };
-
-  // Handle shipping change
-  const handleShippingChange = async (shippingId: string) => {
-    await updateShipping(shippingId);
   };
 
   // Validate cart before checkout
@@ -292,7 +276,7 @@ export default function CartPage() {
               {/* Left Column - Cart Items */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Free Shipping Banner */}
-                {displaySummary.subtotal < FREE_SHIPPING_THRESHOLD && (
+                {deliverySettings?.enableFreeDelivery && displaySummary.subtotal < deliverySettings.freeDeliveryMinAmount && (
                   <div className="bg-gradient-to-r from-[#FFF9E6] to-[#F7E4B2] rounded-xl p-4 border border-[#f3e4b7]">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-[#DDA200]/20 rounded-lg">
@@ -303,12 +287,12 @@ export default function CartPage() {
                           Add{" "}
                           <span className="font-bold text-[#DDA200]">
                             {formatCurrency(
-                              FREE_SHIPPING_THRESHOLD - displaySummary.subtotal
+                              deliverySettings.freeDeliveryMinAmount - displaySummary.subtotal
                             )}
                           </span>{" "}
                           more to get{" "}
                           <span className="font-bold text-green-600">
-                            FREE Standard Shipping!
+                            FREE Delivery!
                           </span>
                         </p>
                         <div className="mt-2 h-2 bg-white rounded-full overflow-hidden">
@@ -317,7 +301,7 @@ export default function CartPage() {
                             style={{
                               width: `${Math.min(
                                 (displaySummary.subtotal /
-                                  FREE_SHIPPING_THRESHOLD) *
+                                  deliverySettings.freeDeliveryMinAmount) *
                                   100,
                                 100
                               )}%`,
@@ -361,9 +345,10 @@ export default function CartPage() {
 
                 {/* Shipping Options */}
                 <ShippingOptions
-                  selectedOption={selectedShippingId || "standard"}
-                  onSelect={handleShippingChange}
-                  freeShippingThreshold={FREE_SHIPPING_THRESHOLD}
+                  deliveryPrice={deliverySettings?.deliveryPrice ?? 200}
+                  deliveryEstimate={deliverySettings?.deliveryEstimate ?? "5-7 business days"}
+                  enableFreeDelivery={deliverySettings?.enableFreeDelivery ?? true}
+                  freeDeliveryMinAmount={deliverySettings?.freeDeliveryMinAmount ?? 5000}
                   currentSubtotal={displaySummary.subtotal}
                 />
 
@@ -411,7 +396,10 @@ export default function CartPage() {
               <div className="space-y-6">
                 <OrderSummary
                   summary={displaySummary}
-                  selectedShipping={selectedShipping}
+                  selectedShipping={{
+                    name: "Standard Delivery",
+                    price: deliverySettings?.deliveryPrice ?? 200,
+                  }}
                   isCheckingOut={isCheckingOut}
                   onCheckout={handleCheckout}
                   checkoutButton={
@@ -442,7 +430,7 @@ export default function CartPage() {
                       </p>
                       <p className="text-xs text-stone-600 mt-0.5">
                         Estimated delivery:{" "}
-                        {selectedShipping?.estimatedDays || "3-5 days"}
+                        {deliverySettings?.deliveryEstimate || "5-7 business days"}
                       </p>
                     </div>
                   </div>
