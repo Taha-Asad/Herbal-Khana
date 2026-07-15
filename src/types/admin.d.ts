@@ -123,6 +123,7 @@ export interface Product {
   sku: string;
   description?: string;
   shortDescription?: string;
+  costPrice?: number;
   isActive: boolean;
   isFeatured: boolean;
   isNew: boolean;
@@ -146,6 +147,9 @@ export interface ProductListItem {
   image?: string;
   categoryName?: string;
   price: number;
+  costPrice?: number;
+  originalPrice?: number;
+  discount?: number;
   stock: number;
   isActive: boolean;
   isFeatured: boolean;
@@ -160,6 +164,7 @@ export interface ProductFormData {
   sku: string;
   description?: string;
   shortDescription?: string;
+  costPrice?: number;
   isActive: boolean;
   isFeatured: boolean;
   isNew: boolean;

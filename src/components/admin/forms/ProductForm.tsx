@@ -43,6 +43,7 @@ const defaultFormData: ProductFormData = {
   sku: "",
   description: "",
   shortDescription: "",
+  costPrice: undefined,
   isActive: true,
   isFeatured: false,
   isNew: false,
@@ -313,6 +314,36 @@ export default function ProductForm({
                   {errors.sku && (
                     <p className="mt-1 text-sm text-red-500">{errors.sku}</p>
                   )}
+                </div>
+
+                {/* Cost Price (Original / Compare Price) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cost Price (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    name="costPrice"
+                    value={formData.costPrice ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        costPrice: val === "" ? undefined : parseFloat(val) || undefined,
+                      }));
+                      if (errors.costPrice) {
+                        setErrors((prev) => ({ ...prev, costPrice: "" }));
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
+                      focus:ring-amber-500 focus:border-transparent transition-all"
+                    placeholder="Original / compare price"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Set higher than selling price to show a discount badge on the storefront
+                  </p>
                 </div>
 
                 {/* Category */}

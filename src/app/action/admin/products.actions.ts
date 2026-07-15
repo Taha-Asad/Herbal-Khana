@@ -101,6 +101,13 @@ export async function getProducts(
         (v) => v.stock > 0 && v.stock <= v.lowStockThreshold,
       );
 
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const costPrice = p.costPrice ? Number(p.costPrice) : null;
+      const hasDiscount = costPrice !== null && costPrice > minPrice;
+      const discount = hasDiscount
+        ? Math.round(((costPrice - minPrice) / costPrice) * 100)
+        : undefined;
+
       return {
         id: p.id,
         name: p.name,
@@ -108,7 +115,10 @@ export async function getProducts(
         sku: p.sku,
         image: p.images[0]?.url,
         categoryName: p.category?.name,
-        price: prices.length > 0 ? Math.min(...prices) : 0,
+        price: minPrice,
+        costPrice: costPrice ?? undefined,
+        originalPrice: hasDiscount ? costPrice : undefined,
+        discount,
         stock: stocks.reduce((a, b) => a + b, 0),
         isActive: p.isActive,
         isFeatured: p.isFeatured,
@@ -155,18 +165,19 @@ export async function getProduct(id: string): Promise<ActionResponse<Product>> {
       return { success: false, error: "Product not found" };
     }
 
-    return {
-      success: true,
-      data: {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        sku: product.sku,
-        description: product.description || undefined,
-        shortDescription: product.shortDescription || undefined,
-        isActive: product.isActive,
-        isFeatured: product.isFeatured,
-        isNew: product.isNew,
+      return {
+        success: true,
+        data: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          sku: product.sku,
+          description: product.description || undefined,
+          shortDescription: product.shortDescription || undefined,
+          costPrice: product.costPrice ? Number(product.costPrice) : undefined,
+          isActive: product.isActive,
+          isFeatured: product.isFeatured,
+          isNew: product.isNew,
         metaTitle: product.metaTitle || undefined,
         metaDescription: product.metaDescription || undefined,
         categoryId: product.categoryId || undefined,
@@ -252,6 +263,7 @@ export async function createProduct(
           sku: data.sku,
           description: data.description,
           shortDescription: data.shortDescription,
+          costPrice: data.costPrice ?? null,
           isActive: data.isActive,
           isFeatured: data.isFeatured,
           isNew: data.isNew,
@@ -365,6 +377,7 @@ export async function updateProduct(
           sku: data.sku,
           description: data.description,
           shortDescription: data.shortDescription,
+          costPrice: data.costPrice ?? null,
           isActive: data.isActive,
           isFeatured: data.isFeatured,
           isNew: data.isNew,

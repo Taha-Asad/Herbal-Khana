@@ -251,6 +251,9 @@ export default function ProductsPage() {
                       Price
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Discount
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Stock
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -321,6 +324,22 @@ export default function ProductsPage() {
                         <span className="text-sm font-medium text-gray-900">
                           {formatCurrency(product.price)}
                         </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        {product.discount && product.discount > 0 ? (
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full w-fit">
+                              -{product.discount}%
+                            </span>
+                            {product.originalPrice && (
+                              <span className="text-xs text-gray-400 line-through mt-0.5">
+                                {formatCurrency(product.originalPrice)}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">

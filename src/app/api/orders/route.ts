@@ -304,6 +304,19 @@ export async function POST(request: NextRequest) {
     }
 
     const tax = 0; // Usually 0 in Pakistan for most products
+
+    // Calculate product discount from costPrice vs selling price
+    const productDiscount = activeCartItems.reduce((sum, item) => {
+      const costPrice = item.variant.product.costPrice
+        ? Number(item.variant.product.costPrice)
+        : 0;
+      const sellingPrice = Number(item.variant.price);
+      if (costPrice > sellingPrice) {
+        return sum + (costPrice - sellingPrice) * item.quantity;
+      }
+      return sum;
+    }, 0);
+
     const total = subtotal + shippingCost + codFee + tax - promoDiscount;
 
     // Create order in a transaction
@@ -318,7 +331,7 @@ export async function POST(request: NextRequest) {
           subtotal,
           shippingCost: shippingCost + codFee,
           tax,
-          discount: 0,
+          discount: productDiscount,
           promoDiscount,
           total,
           currency: "PKR",
