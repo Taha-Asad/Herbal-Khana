@@ -30,6 +30,11 @@ export default async function RootLayout({
           {children}
           <Toaster />
         </SessionProvider>
+        <script
+          src="https://cdn.zanderio.ai/widget/loader.js"
+          data-id="wdg_cZkiS0I7z0LA6IkExGhulVyx"
+          defer
+        />
       </body>
     </html>
   );
