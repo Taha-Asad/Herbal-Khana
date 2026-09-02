@@ -57,7 +57,7 @@ export default function ProductDetails({
   relatedProducts,
 }: ProductDetailsProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(
-    product.variants[0]
+    product.variants[0],
   );
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -86,7 +86,7 @@ export default function ProductDetails({
         v.size === size &&
         (scent
           ? v.scent === scent
-          : !v.scent || v.scent === selectedVariant.scent)
+          : !v.scent || v.scent === selectedVariant.scent),
     );
   };
 
@@ -180,7 +180,7 @@ export default function ProductDetails({
     product.costPrice && product.costPrice > selectedVariant.price
       ? Math.round(
           ((product.costPrice - selectedVariant.price) / product.costPrice) *
-            100
+            100,
         )
       : null;
 
@@ -204,7 +204,7 @@ export default function ProductDetails({
   const commentCount = product.commentCount || 0;
 
   return (
-    <div className="min-h-screen pt-35 pb-10 bg-gradient-to-br from-white via-[#FFF8E1]/20 to-white">
+    <div className="min-h-screen pt-35 pb-10 bg-linear-to-br from-white via-[#FFF8E1]/20 to-white">
       {/* Background Decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 -left-48 w-96 h-96 bg-[#DDA200]/5 rounded-full blur-3xl" />
@@ -239,7 +239,7 @@ export default function ProductDetails({
             </>
           )}
           <ChevronRight className="w-4 h-4 text-stone-400" />
-          <span className="text-[#DDA200] font-semibold truncate max-w-[200px]">
+          <span className="text-[#DDA200] font-semibold truncate max-w-50">
             {product.name}
           </span>
         </nav>
@@ -300,8 +300,8 @@ export default function ProductDetails({
                       i < Math.floor(reviewStats.averageRating)
                         ? "text-[#DDA200] fill-[#DDA200]"
                         : i < reviewStats.averageRating
-                        ? "text-[#DDA200] fill-[#DDA200]/50"
-                        : "text-stone-300"
+                          ? "text-[#DDA200] fill-[#DDA200]/50"
+                          : "text-stone-300"
                     }`}
                   />
                 ))}
@@ -357,8 +357,8 @@ export default function ProductDetails({
                             isSelected
                               ? "border-[#DDA200] bg-[#FFF9E6] text-[#DDA200]"
                               : isAvailable
-                              ? "border-stone-200 text-stone-700 hover:border-[#DDA200]"
-                              : "border-stone-100 text-stone-300 cursor-not-allowed line-through"
+                                ? "border-stone-200 text-stone-700 hover:border-[#DDA200]"
+                                : "border-stone-100 text-stone-300 cursor-not-allowed line-through"
                           }`}
                       >
                         {size}
@@ -392,8 +392,8 @@ export default function ProductDetails({
                             isSelected
                               ? "border-[#DDA200] bg-[#FFF9E6] text-[#DDA200]"
                               : isAvailable
-                              ? "border-stone-200 text-stone-700 hover:border-[#DDA200]"
-                              : "border-stone-100 text-stone-300 cursor-not-allowed"
+                                ? "border-stone-200 text-stone-700 hover:border-[#DDA200]"
+                                : "border-stone-100 text-stone-300 cursor-not-allowed"
                           }`}
                       >
                         {scent}
@@ -457,7 +457,7 @@ export default function ProductDetails({
                 onClick={handleAddToCart}
                 disabled={isAddingToCart || selectedVariant.stock === 0}
                 className="flex-1 flex items-center justify-center gap-3 px-8 py-4 
-                  bg-gradient-to-r from-[#DDA200] to-[#b38600] text-white font-bold 
+                  bg-linear-to-r from-[#DDA200] to-[#b38600] text-white font-bold 
                   text-lg rounded-xl shadow-lg shadow-[#DDA200]/30 
                   hover:shadow-xl hover:shadow-[#DDA200]/40 
                   disabled:opacity-50 disabled:cursor-not-allowed

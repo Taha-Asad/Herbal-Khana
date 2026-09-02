@@ -81,11 +81,11 @@ export default function ProductCard({
       >
         <div className="flex flex-col md:flex-row">
           {/* Image */}
-          <div className="relative w-full md:w-64 h-64 md:h-auto flex-shrink-0">
+          <div className="relative w-full md:w-64 h-64 md:h-auto shrink-0">
             <Link href={`/products/${product.slug}`}>
-              <div className="relative w-full h-full min-h-[200px]">
+              <div className="relative w-full h-full min-h-50">
                 {!imageLoaded && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 animate-pulse" />
+                  <div className="absolute inset-0 bg-linear-to-br from-stone-100 to-stone-200 animate-pulse" />
                 )}
                 <Image
                   src={imageUrl}
@@ -222,7 +222,7 @@ export default function ProductCard({
                 <button
                   onClick={handleAddToCart}
                   disabled={!product.inStock || isAddingToCart}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#DDA200] to-[#b38600]
+                  className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#DDA200] to-[#b38600]
                     text-white font-semibold rounded-xl shadow-lg shadow-[#DDA200]/30 
                     hover:shadow-xl hover:shadow-[#DDA200]/40 disabled:opacity-50 
                     disabled:cursor-not-allowed transition-all duration-300"
@@ -251,10 +251,10 @@ export default function ProductCard({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Container */}
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-[#FFF9E6] to-stone-100">
+      <div className="relative aspect-square overflow-hidden bg-linear-to-br from-[#FFF9E6] to-stone-100">
         <Link href={`/home/shop/products/${product.slug}`}>
           {!imageLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 animate-pulse" />
+            <div className="absolute inset-0 bg-linear-to-br from-stone-100 to-stone-200 animate-pulse" />
           )}
           <Image
             src={imageUrl}
@@ -314,7 +314,7 @@ export default function ProductCard({
 
         {/* Quick Actions Overlay */}
         <div
-          className={`absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent
+          className={`absolute inset-x-0 bottom-0 p-4 bg-linear-to-t from-black/60 to-transparent
             transition-all duration-300 ${
               isHovered
                 ? "opacity-100 translate-y-0"
